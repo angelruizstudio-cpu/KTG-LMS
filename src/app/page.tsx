@@ -14,6 +14,9 @@ export default function HomePage() {
             <BrandLogo inverse />
           </Link>
           <nav className="hidden items-center gap-8 text-sm font-semibold text-text-inverse/85 md:flex">
+            <Link className="transition hover:text-accent" href="/about">
+              Sobre Nosotros
+            </Link>
             <Link className="transition hover:text-accent" href="/auth/login">
               Institution Login
             </Link>
