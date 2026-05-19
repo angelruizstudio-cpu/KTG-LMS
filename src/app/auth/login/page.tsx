@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 export default async function LoginPage({
   searchParams
 }: {
-  searchParams: Promise<{ error?: string; institutionUserId?: string; next?: string }>;
+  searchParams: Promise<{ error?: string; institutionName?: string; institutionUserId?: string; next?: string }>;
 }) {
   const params = await searchParams;
 
@@ -19,7 +19,9 @@ export default async function LoginPage({
           <BrandLogo />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-text-primary">Institution login</h1>
+          <h1 className="text-2xl font-bold text-text-primary">
+            {params.institutionName ? `${params.institutionName} login` : "Institution login"}
+          </h1>
           <p className="mt-2 text-sm text-text-secondary">Use the ID issued by your institution to continue.</p>
         </div>
         {params.error ? (
