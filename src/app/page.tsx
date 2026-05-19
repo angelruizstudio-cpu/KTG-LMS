@@ -1,146 +1,111 @@
-import { ArrowRight, BookOpenCheck, ChartNoAxesCombined, ShieldCheck, Sparkles, UsersRound } from "lucide-react";
+import { ArrowRight, Building2, GraduationCap, ShieldCheck } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
 
 import { BrandLogo } from "@/components/brand-logo";
-import { SiteHeader } from "@/components/layout/site-header";
-import { Card, CardContent } from "@/components/ui/card";
 import { LinkButton } from "@/components/ui/link-button";
 
-const features = [
-  {
-    icon: BookOpenCheck,
-    title: "Structured courses",
-    description: "Build modules, lessons, quizzes, assignments, and certificate-ready learning paths."
-  },
-  {
-    icon: UsersRound,
-    title: "Role-based workspaces",
-    description: "Admins, instructors, and students each get focused dashboards for their daily workflows."
-  },
-  {
-    icon: ChartNoAxesCombined,
-    title: "Progress and grades",
-    description: "Track enrollments, lesson completion, quiz attempts, gradebook entries, and outcomes."
-  },
-  {
-    icon: ShieldCheck,
-    title: "Secure by default",
-    description: "Supabase Auth and Row Level Security policies keep tenant data access explicit."
-  }
-];
-
-export default function LandingPage() {
+export default function HomePage() {
   return (
-    <main className="min-h-screen bg-background">
-      <SiteHeader />
-      <section className="relative overflow-hidden bg-sidebar text-text-inverse">
-        <div className="hero-glow absolute inset-0" />
-        <div className="relative mx-auto grid min-h-[calc(100vh-4rem)] max-w-7xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:px-8">
-          <div className="max-w-3xl">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-sidebar-hover px-3 py-1 text-sm font-semibold text-accent backdrop-blur">
-              <Sparkles size={16} />
-              Modern LMS starter for teams that ship
+    <main className="min-h-screen bg-surface text-text-primary">
+      <header className="border-b border-border bg-surface">
+        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 sm:px-8">
+          <Link className="flex items-center gap-3" href="/">
+            <span className="relative size-12 overflow-hidden rounded-2xl bg-surface shadow-glow">
+              <Image alt="Dosis Educa" className="object-contain p-1" fill priority src="/brand/dosis-educa.png" />
+            </span>
+            <span className="text-2xl font-black tracking-normal text-text-primary">
+              Dosis Educa<span className="text-primary">.</span>
+            </span>
+          </Link>
+          <nav className="hidden items-center gap-8 text-sm font-semibold text-text-primary md:flex">
+            <Link className="hover:text-primary-hover" href="/auth/login">
+              Institution Login
+            </Link>
+            <Link className="hover:text-primary-hover" href="/platform/login">
+              Platform Admin
+            </Link>
+            <Link className="hover:text-primary-hover" href="/auth/register">
+              Access Help
+            </Link>
+          </nav>
+        </div>
+      </header>
+
+      <section className="bg-background">
+        <div className="mx-auto grid min-h-[calc(100vh-5rem)] max-w-7xl items-center gap-12 px-5 py-14 sm:px-8 lg:grid-cols-[1fr_0.95fr]">
+          <div className="mx-auto w-full max-w-[520px] lg:mx-0">
+            <div className="mb-10 flex items-center justify-center gap-7 lg:justify-start">
+              <span className="relative size-24 overflow-hidden rounded-3xl bg-surface shadow-glow">
+                <Image alt="Dosis Educa" className="object-contain p-2" fill priority src="/brand/dosis-educa.png" />
+              </span>
+              <div>
+                <h1 className="text-5xl font-black leading-none text-text-primary sm:text-7xl">Dosis Educa</h1>
+                <p className="mt-3 text-xl font-semibold text-text-secondary">By Dosis de Esperanza</p>
+              </div>
             </div>
-            <BrandLogo className="mb-5" imageClassName="h-16 w-16" inverse />
-            <h1 className="text-5xl font-bold tracking-normal text-text-inverse sm:text-6xl">
-              Dosis Educa
-            </h1>
-            <p className="mt-5 max-w-2xl text-lg leading-8 text-text-inverse opacity-80">
-              A clean online learning platform with course authoring, enrollment, progress tracking,
-              quizzes, gradebooks, certificates, payments, and secure role-based access.
-            </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <LinkButton href="/auth/register" size="lg">
-                Create an account
+
+            <div className="max-w-[420px]">
+              <h2 className="text-xl font-bold text-text-primary">Account Login</h2>
+              <div className="mt-8 grid gap-5">
+                <LinkButton className="h-14 rounded-full bg-sidebar text-base hover:bg-sidebar-hover" href="/auth/login" size="lg">
+                  <GraduationCap size={20} />
+                  Students and Educators
+                </LinkButton>
+                <LinkButton className="h-14 rounded-full text-base" href="/platform/login" size="lg" variant="secondary">
+                  <ShieldCheck size={20} />
+                  Platform Administrator
+                </LinkButton>
+              </div>
+            </div>
+          </div>
+
+          <aside className="rounded-[2rem] bg-secondary p-8 text-text-inverse shadow-blueglow sm:p-10 lg:ml-auto lg:w-[520px]">
+            <div className="flex items-start gap-4">
+              <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-accent text-secondary-hover">
+                <Building2 size={24} />
+              </span>
+              <div>
+                <h2 className="text-3xl font-black leading-tight text-text-inverse">Students and Educators</h2>
+                <p className="mt-4 text-base font-medium leading-7 text-text-inverse/90">
+                  If your institution uses Dosis Educa, enter the institution ID issued by your school to access your
+                  login page.
+                </p>
+              </div>
+            </div>
+
+            <form action="/auth/login" className="mt-8 grid gap-3" method="get">
+              <label className="text-sm font-bold text-text-inverse" htmlFor="institutionUserId">
+                Institution ID
+              </label>
+              <input
+                className="h-14 rounded-xl border border-white/20 bg-surface px-4 font-mono text-base font-semibold uppercase text-text-primary outline-none shadow-soft transition placeholder:font-sans placeholder:normal-case placeholder:text-text-secondary/70 focus:border-accent focus:ring-4 focus:ring-accent/30"
+                id="institutionUserId"
+                name="institutionUserId"
+                placeholder="DOSIS-000001"
+              />
+              <button
+                className="mt-3 inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-text-inverse shadow-glow transition hover:bg-primary-hover"
+                type="submit"
+              >
+                Continue to login
                 <ArrowRight size={18} />
-              </LinkButton>
-              <LinkButton href="/auth/login" variant="secondary" size="lg">
-                Log in
-              </LinkButton>
-            </div>
-          </div>
+              </button>
+            </form>
 
-          <div className="grid gap-4 rounded-3xl border border-border bg-sidebar-hover p-4 shadow-glow backdrop-blur">
-            <div className="rounded-2xl bg-surface p-5 text-text-primary shadow-soft">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-text-secondary">Instructor Studio</p>
-                  <h2 className="mt-1 text-2xl font-bold text-text-primary">Advanced Product Design</h2>
-                </div>
-                <span className="rounded-full bg-success-light px-3 py-1 text-sm font-semibold text-success">Live</span>
-              </div>
-              <div className="mt-6 grid gap-3">
-                {["Research foundations", "Design systems", "Portfolio critique"].map((item, index) => (
-                  <div key={item} className="flex items-center gap-3 rounded-xl border border-border p-3">
-                    <span className="grid size-8 place-items-center rounded-xl bg-primary-light text-sm font-bold text-primary-hover">
-                      {index + 1}
-                    </span>
-                    <span className="font-medium text-text-primary">{item}</span>
-                  </div>
-                ))}
-              </div>
+            <div className="mt-8 rounded-2xl border border-white/20 bg-white/10 p-4 text-sm leading-6 text-text-inverse/90">
+              Your ID connects you directly to your institution. You do not need to choose a school every time you log in.
             </div>
-            <div className="grid grid-cols-3 gap-3">
-              {[
-                ["82%", "Completion"],
-                ["318", "Students"],
-                ["94", "Avg grade"]
-              ].map(([value, label]) => (
-                <div key={label} className="rounded-2xl bg-surface p-4 text-center shadow-soft">
-                  <p className="text-2xl font-bold text-text-primary">{value}</p>
-                  <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-text-secondary">{label}</p>
-                </div>
-              ))}
-            </div>
-          </div>
+          </aside>
         </div>
       </section>
 
-      <section id="features" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="max-w-2xl">
-          <h2 className="text-3xl font-bold text-text-primary">Everything needed for a version 1 LMS</h2>
-          <p className="mt-3 text-text-secondary">
-            The foundation covers learning content, roles, security, payments, and measurable learner outcomes.
-          </p>
+      <footer className="border-t border-border bg-surface">
+        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-5 py-6 text-sm text-text-secondary sm:px-8 md:flex-row md:items-center md:justify-between">
+          <BrandLogo />
+          <p>Secure academic access for institution-managed learning.</p>
         </div>
-        <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {features.map((feature) => (
-            <Card key={feature.title}>
-              <CardContent>
-                <feature.icon className="text-secondary" size={24} />
-                <h3 className="mt-5 font-semibold text-text-primary">{feature.title}</h3>
-                <p className="mt-2 text-sm leading-6 text-text-secondary">{feature.description}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </section>
-
-      <section id="roles" className="border-y border-border bg-surface">
-        <div className="mx-auto grid max-w-7xl gap-6 px-4 py-16 sm:px-6 lg:grid-cols-3 lg:px-8">
-          {[
-            ["Admin", "Create instructors, manage users, assign programs, and grant course access."],
-            ["Instructor", "Publish courses, add lessons, review enrolled students, and maintain gradebook records."],
-            ["Student", "Access assigned program courses, complete lessons, submit work, take quizzes, and earn certificates."]
-          ].map(([title, description]) => (
-            <div key={title}>
-              <h3 className="text-xl font-bold text-text-primary">{title}</h3>
-              <p className="mt-3 text-sm leading-6 text-text-secondary">{description}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section id="courses" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="soft-gradient rounded-3xl border border-border px-6 py-10 shadow-blueglow sm:px-10">
-          <h2 className="text-3xl font-bold">Ready for your first cohort?</h2>
-          <p className="mt-3 max-w-2xl text-text-secondary">
-            Connect Supabase, run the schema, add Stripe keys, and this starter is ready for real course workflows.
-          </p>
-          <LinkButton href="/auth/register" className="mt-7" size="lg">
-            Build your academy
-          </LinkButton>
-        </div>
-      </section>
+      </footer>
     </main>
   );
 }

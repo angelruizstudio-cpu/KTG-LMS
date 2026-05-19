@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 export default async function LoginPage({
   searchParams
 }: {
-  searchParams: Promise<{ error?: string; next?: string }>;
+  searchParams: Promise<{ error?: string; institutionUserId?: string; next?: string }>;
 }) {
   const params = await searchParams;
 
@@ -35,6 +35,7 @@ export default async function LoginPage({
             placeholder="DOSIS-000001"
             autoCapitalize="characters"
             autoComplete="username"
+            defaultValue={params.institutionUserId ?? ""}
             required
           />
           <Input label="Password" name="password" type="password" autoComplete="current-password" required />
