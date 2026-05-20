@@ -2,6 +2,7 @@ import { Award } from "lucide-react";
 
 import { EmptyState } from "@/components/empty-state";
 import { Card, CardContent } from "@/components/ui/card";
+import { LinkButton } from "@/components/ui/link-button";
 import { requireProfile } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -61,6 +62,9 @@ export default async function CertificatesPage() {
                 <p className="mt-4 text-sm text-text-secondary">Awarded to</p>
                 <p className="text-xl font-bold text-text-primary">{profile.full_name}</p>
                 <p className="mt-8 text-xs font-semibold text-text-secondary">{certificate.certificate_number}</p>
+                <LinkButton className="mt-5 print:hidden" href={`/dashboard/student/certificates/${certificate.id}`} size="sm">
+                  View / Print certificate
+                </LinkButton>
               </CardContent>
             </Card>
           ))}

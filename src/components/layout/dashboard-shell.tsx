@@ -66,8 +66,8 @@ export async function DashboardShell({
   const { language, t } = await getDictionary();
 
   return (
-    <div className="min-h-screen bg-background">
-      <aside className="fixed inset-y-0 left-0 z-20 hidden w-72 bg-sidebar text-text-inverse shadow-soft lg:block">
+    <div className="min-h-screen bg-background print:bg-surface">
+      <aside className="fixed inset-y-0 left-0 z-20 hidden w-72 bg-sidebar text-text-inverse shadow-soft print:hidden lg:block">
         <div className="flex h-16 items-center gap-3 border-b border-white/10 px-6">
           <BrandLogo inverse />
         </div>
@@ -89,8 +89,8 @@ export async function DashboardShell({
           ))}
         </nav>
       </aside>
-      <div className="lg:pl-72">
-        <header className="sticky top-0 z-10 border-b border-border bg-surface/90 backdrop-blur">
+      <div className="print:pl-0 lg:pl-72">
+        <header className="sticky top-0 z-10 border-b border-border bg-surface/90 backdrop-blur print:hidden">
           <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
             <Link className="flex items-center gap-3 font-semibold text-text-primary lg:hidden" href="/dashboard">
               <BrandLogo />
@@ -112,7 +112,7 @@ export async function DashboardShell({
             </div>
           </div>
         </header>
-        <main className="px-4 py-8 sm:px-6 lg:px-8">{children}</main>
+        <main className="px-4 py-8 print:p-0 sm:px-6 lg:px-8">{children}</main>
       </div>
     </div>
   );
