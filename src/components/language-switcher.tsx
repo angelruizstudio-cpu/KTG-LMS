@@ -25,8 +25,9 @@ export function LanguageSwitcher({
           <input name="returnTo" type="hidden" value={currentPath} />
           <button
             aria-pressed={language === item}
+            aria-label={languages[item].label}
             className={cn(
-              "inline-flex h-9 items-center gap-2 rounded-full px-3 text-sm font-bold transition",
+              "inline-flex size-9 items-center justify-center rounded-full text-lg font-bold leading-none transition",
               language === item
                 ? "bg-primary text-text-inverse shadow-glow"
                 : variant === "dark"
@@ -39,7 +40,6 @@ export function LanguageSwitcher({
             <span aria-hidden="true" className="text-base leading-none">
               {languages[item].flag}
             </span>
-            <span>{languages[item].shortLabel}</span>
           </button>
         </form>
       ))}
