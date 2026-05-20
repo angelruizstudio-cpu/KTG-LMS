@@ -22,6 +22,11 @@ export default async function RegisterPage({
       description: "Las cuentas de estudiantes, instructores y administradores institucionales son creadas por cada institución.",
       help: "Tu institución te proveerá un ID como ",
       title: "Acceso administrado por la institución"
+    },
+    zh: {
+      description: "学生、教师和机构管理员账号由各自机构创建。",
+      help: "你的机构会提供类似这样的 ID：",
+      title: "由机构管理的访问权限"
     }
   }[language];
 

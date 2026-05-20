@@ -1,18 +1,19 @@
 import { cookies } from "next/headers";
 
-export type AppLanguage = "en" | "es";
+export type AppLanguage = "en" | "es" | "zh";
 
 export const languageCookieName = "dosis_lang";
 
 export const languages: Record<AppLanguage, { flag: string; label: string; shortLabel: string }> = {
   es: { flag: "🇵🇷", label: "Español", shortLabel: "ES" },
-  en: { flag: "🇺🇸", label: "English", shortLabel: "EN" }
+  en: { flag: "🇺🇸", label: "English", shortLabel: "EN" },
+  zh: { flag: "🇨🇳", label: "中文", shortLabel: "中文" }
 };
 
 export async function getLanguage(): Promise<AppLanguage> {
   const cookieStore = await cookies();
   const value = cookieStore.get(languageCookieName)?.value;
-  return value === "en" || value === "es" ? value : "es";
+  return value === "en" || value === "es" || value === "zh" ? value : "es";
 }
 
 export const dictionary = {
@@ -156,6 +157,76 @@ export const dictionary = {
       profileRoleAdmin: "Admin",
       profileRoleInstructor: "Instructor",
       profileRoleStudent: "Estudiante"
+    }
+  },
+  zh: {
+    common: {
+      backToInstitutionLogin: "返回机构登录",
+      backToPlatformLogin: "返回平台登录",
+      certificates: "证书",
+      courses: "课程",
+      dashboard: "仪表板",
+      forgotPassword: "忘记密码？",
+      gradebook: "成绩册",
+      institutionLogin: "机构登录",
+      platformAdmin: "平台管理员",
+      programCourses: "项目课程",
+      programs: "项目",
+      settings: "设置",
+      signOut: "退出登录",
+      users: "用户"
+    },
+    home: {
+      accessHelp: "访问帮助",
+      adminButton: "平台管理员",
+      badge: "由机构管理的学习门户",
+      headline: "Dosis Educa",
+      institutionLogin: "机构登录",
+      navAbout: "关于我们",
+      searchButton: "学生与教育者",
+      subtitle: "使用学校发放的机构 ID 访问你的课程、项目、成绩和证书。"
+    },
+    institutionAccess: {
+      empty: "没有找到匹配的机构。",
+      heading: "学生与教育者",
+      loading: "正在搜索...",
+      previewItems: ["项目课程", "先修课程访问", "财务审核"],
+      previewTitle: "项目仪表板",
+      previewType: "学生门户",
+      searchLabel: "搜索机构",
+      searchPlaceholder: "输入机构名称",
+      subtitle: "搜索你的机构并选择它，即可进入对应机构的登录页面。"
+    },
+    auth: {
+      confirmPassword: "确认密码",
+      createNewPassword: "创建新密码",
+      email: "电子邮件",
+      forgotDescription: "我们会向该账号绑定的邮箱发送安全的密码恢复链接。",
+      institutionId: "机构 ID",
+      institutionUsers: "机构用户",
+      institutionUsersDescription: "学生、教师和机构管理员使用自己的机构 ID。",
+      login: "登录",
+      loginDescription: "使用机构发放给你的 ID 继续。",
+      needAccess: "需要访问权限？请联系你的机构管理员。",
+      newPassword: "新密码",
+      password: "密码",
+      platformAdmins: "平台管理员",
+      platformAdminsDescription: "平台管理员使用分配给平台账号的电子邮件。",
+      platformDescription: "管理 LMS 机构、平台访问权限和全局设置。",
+      requestNewLink: "申请新的重置链接",
+      resetExpired: "此重置会话不存在或已过期。请申请新的密码重置链接。",
+      resetPassword: "重置密码",
+      resetSent: "如果该账号存在，我们会发送密码重置邮件。",
+      sendResetLink: "发送重置链接",
+      updatePassword: "更新密码"
+    },
+    dashboard: {
+      adminOverview: "概览",
+      instructorOverview: "概览",
+      myLearning: "我的学习",
+      profileRoleAdmin: "管理员",
+      profileRoleInstructor: "教师",
+      profileRoleStudent: "学生"
     }
   }
 } as const;

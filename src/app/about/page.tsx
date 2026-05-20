@@ -99,6 +99,43 @@ function getAboutCopy(language: AppLanguage) {
         { title: "Measurable progress", description: "Students can see courses, progress, grades, and certificates.", Icon: GraduationCap },
         { title: "Service", description: "Designed to support purposeful education with order and excellence.", Icon: HeartHandshake }
       ]
+    },
+    zh: {
+      cta: "进入机构登录",
+      ctaDescription: "每个机构都有自己的门户、用户、项目和证书。",
+      ctaTitle: "为每个机构提供有序的教育体验",
+      eyebrow: "关于我们",
+      hero: "我们的使命",
+      intro:
+        "Dosis Educa 帮助教育机构提供有组织、易访问且安全的学习体验。平台将学生、教师和管理员连接在一个学术环境中，支持项目完成、进度追踪和证书颁发。",
+      mainButton: "返回主门户",
+      navAbout: "关于我们",
+      platformAdmin: "平台管理员",
+      sectionDescription:
+        "该平台专为需要管理学术项目、通过先修课程控制访问、在认证前验证财务状态，并保持学生体验简单清晰的机构而设计。",
+      sectionTitle: "面向使命型机构的 LMS",
+      overviewItems: [
+        {
+          title: "我们的使命",
+          description: "为机构、教师和学生提供清晰、安全、以学术进步为中心的学习平台。"
+        },
+        {
+          title: "我们的愿景",
+          description: "建立一个学习生态系统，帮助每位学生在结构、指导和成果证明中完成自己的项目。"
+        },
+        {
+          title: "我们的承诺",
+          description: "以诚信打造可靠技术，用于管理课程、注册、成绩、财务审核和证书。"
+        }
+      ],
+      values: [
+        { title: "机构访问", description: "每位学生都通过所属机构和学术 ID 登录。", Icon: Building2 },
+        { title: "有序学习", description: "项目、课程、模块和先修要求都在一个清晰流程中。", Icon: BookOpenCheck },
+        { title: "学习指导", description: "管理员和教师拥有工具来指导学生。", Icon: UsersRound },
+        { title: "安全", description: "每个机构通过权限和租户隔离保持数据独立。", Icon: ShieldCheck },
+        { title: "可衡量进度", description: "学生可以查看课程、进度、成绩和证书。", Icon: GraduationCap },
+        { title: "服务", description: "旨在以秩序和卓越支持有使命的教育。", Icon: HeartHandshake }
+      ]
     }
   };
 

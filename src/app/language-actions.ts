@@ -6,7 +6,8 @@ import { redirect } from "next/navigation";
 import { languageCookieName, type AppLanguage } from "@/lib/i18n";
 
 export async function setLanguageAction(formData: FormData) {
-  const language = String(formData.get("language")) === "en" ? "en" : ("es" as AppLanguage);
+  const requestedLanguage = String(formData.get("language"));
+  const language: AppLanguage = requestedLanguage === "en" || requestedLanguage === "zh" ? requestedLanguage : "es";
   const returnTo = String(formData.get("returnTo") || "/");
   const cookieStore = await cookies();
 
