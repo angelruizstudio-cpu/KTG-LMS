@@ -56,7 +56,8 @@ const gradeAssignmentSchema = z.object({
   itemName: z.string().min(2),
   score: z.coerce.number().min(0),
   maxScore: z.coerce.number().min(1).default(100),
-  feedback: z.string().optional()
+  feedback: z.string().optional(),
+  returnTo: z.enum(["course", "gradebook"]).default("course")
 });
 
 export async function createCourseAction(formData: FormData) {
@@ -239,11 +240,16 @@ export async function gradeAssignmentSubmissionAction(formData: FormData) {
     itemName: formData.get("itemName"),
     score: formData.get("score"),
     maxScore: formData.get("maxScore") || 100,
-    feedback: formData.get("feedback") || ""
+    feedback: formData.get("feedback") || "",
+    returnTo: formData.get("returnTo") || "course"
   });
 
   if (!parsed.success) {
-    redirect(`/dashboard/instructor/courses/${String(formData.get("courseId"))}?error=Grade details are invalid.`);
+    const targetPath =
+      String(formData.get("returnTo")) === "gradebook"
+        ? "/dashboard/instructor/gradebook"
+        : `/dashboard/instructor/courses/${String(formData.get("courseId"))}`;
+    redirect(`${targetPath}?error=Grade details are invalid.`);
   }
 
   const supabase = await createSupabaseServerClient();
@@ -259,7 +265,9 @@ export async function gradeAssignmentSubmissionAction(formData: FormData) {
     .eq("id", parsed.data.submissionId);
 
   if (submissionError) {
-    redirect(`/dashboard/instructor/courses/${parsed.data.courseId}?error=${encodeURIComponent(submissionError.message)}`);
+    const targetPath =
+      parsed.data.returnTo === "gradebook" ? "/dashboard/instructor/gradebook" : `/dashboard/instructor/courses/${parsed.data.courseId}`;
+    redirect(`${targetPath}?error=${encodeURIComponent(submissionError.message)}`);
   }
 
   const { error: gradeError } = await supabase.from("gradebook_entries").insert({
@@ -272,9 +280,14 @@ export async function gradeAssignmentSubmissionAction(formData: FormData) {
   });
 
   if (gradeError) {
-    redirect(`/dashboard/instructor/courses/${parsed.data.courseId}?error=${encodeURIComponent(gradeError.message)}`);
+    const targetPath =
+      parsed.data.returnTo === "gradebook" ? "/dashboard/instructor/gradebook" : `/dashboard/instructor/courses/${parsed.data.courseId}`;
+    redirect(`${targetPath}?error=${encodeURIComponent(gradeError.message)}`);
   }
 
   revalidatePath(`/dashboard/instructor/courses/${parsed.data.courseId}`);
   revalidatePath("/dashboard/instructor/gradebook");
+  if (parsed.data.returnTo === "gradebook") {
+    redirect("/dashboard/instructor/gradebook");
+  }
 }
