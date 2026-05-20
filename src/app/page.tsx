@@ -3,9 +3,13 @@ import Link from "next/link";
 
 import { BrandLogo } from "@/components/brand-logo";
 import { InstitutionAccess, OpenInstitutionSearchButton } from "@/components/institution-access";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { LinkButton } from "@/components/ui/link-button";
+import { getDictionary } from "@/lib/i18n";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const { language, t } = await getDictionary();
+
   return (
     <main className="min-h-screen bg-sidebar text-text-inverse">
       <header className="absolute inset-x-0 top-0 z-20">
@@ -15,17 +19,18 @@ export default function HomePage() {
           </Link>
           <nav className="hidden items-center gap-8 text-sm font-semibold text-text-inverse/85 md:flex">
             <Link className="transition hover:text-accent" href="/about">
-              Sobre Nosotros
+              {t.home.navAbout}
             </Link>
             <Link className="transition hover:text-accent" href="/auth/login">
-              Institution Login
+              {t.home.institutionLogin}
             </Link>
             <Link className="transition hover:text-accent" href="/platform/login">
-              Platform Admin
+              {t.common.platformAdmin}
             </Link>
             <Link className="transition hover:text-accent" href="/auth/register">
-              Access Help
+              {t.home.accessHelp}
             </Link>
+            <LanguageSwitcher currentPath="/" language={language} variant="dark" />
           </nav>
         </div>
       </header>
@@ -41,18 +46,15 @@ export default function HomePage() {
           <div className="mx-auto w-full max-w-[620px] lg:mx-0">
             <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-accent/70 bg-sidebar-hover/70 px-4 py-2 text-sm font-bold text-accent shadow-soft backdrop-blur">
               <Sparkles size={16} />
-              Institution-managed learning portal
+              {t.home.badge}
             </div>
 
             <BrandLogo className="mb-8" imageClassName="h-12 w-12" inverse />
-            <h1 className="text-6xl font-black leading-none text-text-inverse sm:text-7xl">Dosis Educa</h1>
-            <p className="mt-7 max-w-2xl text-lg font-semibold leading-8 text-text-inverse/78">
-              Access your assigned courses, programs, grades, and certificates through the institution ID issued by your
-              school.
-            </p>
+            <h1 className="text-6xl font-black leading-none text-text-inverse sm:text-7xl">{t.home.headline}</h1>
+            <p className="mt-7 max-w-2xl text-lg font-semibold leading-8 text-text-inverse/78">{t.home.subtitle}</p>
 
             <div className="mt-9 grid max-w-[460px] gap-4">
-              <OpenInstitutionSearchButton />
+              <OpenInstitutionSearchButton label={t.home.searchButton} />
               <LinkButton
                 className="h-14 rounded-full border-white/70 bg-surface text-base hover:border-accent hover:bg-secondary-light"
                 href="/platform/login"
@@ -60,12 +62,15 @@ export default function HomePage() {
                 variant="secondary"
               >
                 <ShieldCheck size={20} />
-                Platform Administrator
+                {t.home.adminButton}
               </LinkButton>
+              <div className="md:hidden">
+                <LanguageSwitcher currentPath="/" language={language} variant="dark" />
+              </div>
             </div>
           </div>
 
-          <InstitutionAccess />
+          <InstitutionAccess copy={t.institutionAccess} />
         </div>
       </section>
     </main>

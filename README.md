@@ -7,6 +7,7 @@ A custom LMS starter for Dosis de Esperanza Educa built with Next.js App Router,
 - Public landing page
 - Login and registration with Supabase Auth
 - Password reset flow for institution users and platform administrators
+- Bilingual English/Spanish UI foundation with Puerto Rico and United States flag language switcher
 - Protected dashboard routes
 - Role-based dashboards for admins, instructors, and students
 - Multi-tenant foundation with tenant-scoped users, programs, courses, and RLS

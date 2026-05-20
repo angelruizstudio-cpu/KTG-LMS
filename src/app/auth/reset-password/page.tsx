@@ -2,8 +2,10 @@ import Link from "next/link";
 
 import { updatePasswordAction } from "@/app/auth/actions";
 import { BrandLogo } from "@/components/brand-logo";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { getDictionary } from "@/lib/i18n";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export default async function ResetPasswordPage({
@@ -12,6 +14,7 @@ export default async function ResetPasswordPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const params = await searchParams;
+  const { language, t } = await getDictionary();
   const supabase = await createSupabaseServerClient();
   const {
     data: { user }
@@ -23,10 +26,13 @@ export default async function ResetPasswordPage({
         <Link className="mb-8 flex items-center gap-3 font-semibold text-text-primary" href="/">
           <BrandLogo />
         </Link>
+        <div className="mb-6 flex justify-end">
+          <LanguageSwitcher currentPath="/auth/reset-password" language={language} />
+        </div>
 
         <div>
-          <h1 className="text-2xl font-bold text-text-primary">Create new password</h1>
-          <p className="mt-2 text-sm text-text-secondary">Choose a new password for your LMS account.</p>
+          <h1 className="text-2xl font-bold text-text-primary">{t.auth.createNewPassword}</h1>
+          <p className="mt-2 text-sm text-text-secondary">{t.auth.forgotDescription}</p>
         </div>
 
         {params.error ? (
@@ -37,9 +43,9 @@ export default async function ResetPasswordPage({
 
         {user ? (
           <form action={updatePasswordAction} className="mt-6 grid gap-4">
-            <Input label="New password" name="password" type="password" autoComplete="new-password" minLength={8} required />
+            <Input label={t.auth.newPassword} name="password" type="password" autoComplete="new-password" minLength={8} required />
             <Input
-              label="Confirm password"
+              label={t.auth.confirmPassword}
               name="confirmPassword"
               type="password"
               autoComplete="new-password"
@@ -47,18 +53,18 @@ export default async function ResetPasswordPage({
               required
             />
             <Button type="submit" className="mt-2">
-              Update password
+              {t.auth.updatePassword}
             </Button>
           </form>
         ) : (
           <div className="mt-6 rounded-xl border border-warning bg-warning-light px-3 py-3 text-sm text-warning">
-            This reset session is missing or expired. Request a new password reset link.
+            {t.auth.resetExpired}
           </div>
         )}
 
         <p className="mt-6 text-center text-sm">
           <Link className="font-semibold text-primary-hover" href="/auth/forgot-password">
-            Request a new reset link
+            {t.auth.requestNewLink}
           </Link>
         </p>
       </div>

@@ -4,32 +4,52 @@ import type { ReactNode } from "react";
 
 import { signOutAction } from "@/app/auth/actions";
 import { BrandLogo } from "@/components/brand-logo";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { TenantSwitcher } from "@/components/layout/tenant-switcher";
 import { Button } from "@/components/ui/button";
+import { getDictionary } from "@/lib/i18n";
 import { cn, initials } from "@/lib/utils";
 import type { UserRole } from "@/types/database";
 
-const navByRole: Record<UserRole, Array<{ href: string; label: string; icon: typeof LayoutDashboard }>> = {
+const navByRole: Record<UserRole, Array<{ href: string; labelKey: string; icon: typeof LayoutDashboard }>> = {
   admin: [
-    { href: "/dashboard/admin", label: "Overview", icon: LayoutDashboard },
-    { href: "/dashboard/admin/users", label: "Users", icon: UsersRound },
-    { href: "/dashboard/admin/programs", label: "Programs", icon: BookOpen },
-    { href: "/dashboard/admin/courses", label: "Courses", icon: BookOpen },
-    { href: "/dashboard/admin/settings", label: "Settings", icon: Settings }
+    { href: "/dashboard/admin", labelKey: "adminOverview", icon: LayoutDashboard },
+    { href: "/dashboard/admin/users", labelKey: "users", icon: UsersRound },
+    { href: "/dashboard/admin/programs", labelKey: "programs", icon: BookOpen },
+    { href: "/dashboard/admin/courses", labelKey: "courses", icon: BookOpen },
+    { href: "/dashboard/admin/settings", labelKey: "settings", icon: Settings }
   ],
   instructor: [
-    { href: "/dashboard/instructor", label: "Overview", icon: LayoutDashboard },
-    { href: "/dashboard/instructor/courses", label: "Courses", icon: BookOpen },
-    { href: "/dashboard/instructor/gradebook", label: "Gradebook", icon: Trophy }
+    { href: "/dashboard/instructor", labelKey: "instructorOverview", icon: LayoutDashboard },
+    { href: "/dashboard/instructor/courses", labelKey: "courses", icon: BookOpen },
+    { href: "/dashboard/instructor/gradebook", labelKey: "gradebook", icon: Trophy }
   ],
   student: [
-    { href: "/dashboard/student", label: "My learning", icon: LayoutDashboard },
-    { href: "/dashboard/student/catalog", label: "Program courses", icon: BookOpen },
-    { href: "/dashboard/student/certificates", label: "Certificates", icon: Trophy }
+    { href: "/dashboard/student", labelKey: "myLearning", icon: LayoutDashboard },
+    { href: "/dashboard/student/catalog", labelKey: "programCourses", icon: BookOpen },
+    { href: "/dashboard/student/certificates", labelKey: "certificates", icon: Trophy }
   ]
 };
 
-export function DashboardShell({
+function navLabel(labelKey: string, t: Awaited<ReturnType<typeof getDictionary>>["t"]) {
+  if (labelKey in t.dashboard) {
+    return t.dashboard[labelKey as keyof typeof t.dashboard];
+  }
+
+  return t.common[labelKey as keyof typeof t.common] ?? labelKey;
+}
+
+function roleLabel(role: UserRole, t: Awaited<ReturnType<typeof getDictionary>>["t"]) {
+  const roleLabels = {
+    admin: t.dashboard.profileRoleAdmin,
+    instructor: t.dashboard.profileRoleInstructor,
+    student: t.dashboard.profileRoleStudent
+  };
+
+  return roleLabels[role];
+}
+
+export async function DashboardShell({
   children,
   memberships,
   profile
@@ -43,6 +63,7 @@ export function DashboardShell({
   profile: { full_name: string; email: string; role: UserRole; default_tenant_id: string };
 }) {
   const nav = navByRole[profile.role];
+  const { language, t } = await getDictionary();
 
   return (
     <div className="min-h-screen bg-background">
@@ -63,7 +84,7 @@ export function DashboardShell({
               href={item.href as never}
             >
               <item.icon size={18} />
-              {item.label}
+              {navLabel(item.labelKey, t)}
             </Link>
           ))}
         </nav>
@@ -75,15 +96,16 @@ export function DashboardShell({
               <BrandLogo />
             </Link>
             <div className="ml-auto flex items-center gap-4">
+              <LanguageSwitcher currentPath="/dashboard" language={language} />
               <div className="hidden text-right sm:block">
                 <p className="text-sm font-semibold text-text-primary">{profile.full_name}</p>
-                <p className="text-xs capitalize text-text-secondary">{profile.role}</p>
+                <p className="text-xs capitalize text-text-secondary">{roleLabel(profile.role, t)}</p>
               </div>
               <div className="grid size-10 place-items-center rounded-full bg-primary-light text-sm font-bold text-primary-hover">
                 {initials(profile.full_name || profile.email)}
               </div>
               <form action={signOutAction}>
-                <Button aria-label="Sign out" size="sm" type="submit" variant="ghost">
+                <Button aria-label={t.common.signOut} size="sm" type="submit" variant="ghost">
                   <LogOut size={18} />
                 </Button>
               </form>

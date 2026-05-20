@@ -10,7 +10,19 @@ type Institution = {
   slug: string;
 };
 
-export function InstitutionAccess() {
+type InstitutionAccessCopy = {
+  empty: string;
+  heading: string;
+  loading: string;
+  previewItems: readonly string[];
+  previewTitle: string;
+  previewType: string;
+  searchLabel: string;
+  searchPlaceholder: string;
+  subtitle: string;
+};
+
+export function InstitutionAccess({ copy }: { copy: InstitutionAccessCopy }) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [institutions, setInstitutions] = useState<Institution[]>([]);
@@ -68,34 +80,32 @@ export function InstitutionAccess() {
               <Building2 size={24} />
             </span>
             <div>
-              <h2 className="text-3xl font-black leading-tight text-text-inverse">Students and Educators</h2>
-              <p className="mt-4 text-base font-medium leading-7 text-text-inverse/90">
-                Search for your school and select it to access that institution&apos;s login page.
-              </p>
+              <h2 className="text-3xl font-black leading-tight text-text-inverse">{copy.heading}</h2>
+              <p className="mt-4 text-base font-medium leading-7 text-text-inverse/90">{copy.subtitle}</p>
             </div>
           </div>
 
           <div className="mt-8 grid gap-3">
             <label className="text-sm font-bold text-text-inverse" htmlFor="institutionSearch">
-              Search School/District
+              {copy.searchLabel}
             </label>
             <input
               autoFocus
               className="h-14 rounded-xl border border-white/20 bg-surface px-4 text-base font-semibold text-text-primary outline-none shadow-soft transition placeholder:text-text-secondary/70 focus:border-accent focus:ring-4 focus:ring-accent/30"
               id="institutionSearch"
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search institution"
+              placeholder={copy.searchPlaceholder}
               value={query}
             />
 
             <div className="mt-2 grid gap-3">
               {isLoading ? (
-                <div className="rounded-xl bg-surface px-4 py-4 text-sm font-semibold text-text-secondary">Searching...</div>
+                <div className="rounded-xl bg-surface px-4 py-4 text-sm font-semibold text-text-secondary">{copy.loading}</div>
               ) : null}
 
               {!isLoading && query.trim().length >= 2 && institutions.length === 0 ? (
                 <div className="rounded-xl bg-surface px-4 py-4 text-sm font-semibold text-text-secondary">
-                  No matching institutions found.
+                  {copy.empty}
                 </div>
               ) : null}
 
@@ -119,13 +129,13 @@ export function InstitutionAccess() {
           <div className="rounded-3xl bg-surface p-5 text-text-primary shadow-soft">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-bold text-text-secondary">Student Portal</p>
-                <h2 className="mt-1 text-2xl font-black text-text-primary">Program Dashboard</h2>
+                <p className="text-sm font-bold text-text-secondary">{copy.previewType}</p>
+                <h2 className="mt-1 text-2xl font-black text-text-primary">{copy.previewTitle}</h2>
               </div>
               <span className="rounded-full bg-success-light px-3 py-1 text-sm font-bold text-success">Live</span>
             </div>
             <div className="mt-6 grid gap-3">
-              {["Program courses", "Prerequisite access", "Finance clearance"].map((item, index) => (
+              {copy.previewItems.map((item, index) => (
                 <div key={item} className="flex items-center gap-3 rounded-xl border border-border p-3">
                   <span className="grid size-8 place-items-center rounded-xl bg-primary-light text-sm font-black text-primary-hover">
                     {index + 1}
@@ -153,7 +163,7 @@ export function InstitutionAccess() {
   );
 }
 
-export function OpenInstitutionSearchButton() {
+export function OpenInstitutionSearchButton({ label = "Students and Educators" }: { label?: string }) {
   return (
     <button
       className="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-primary px-6 text-base font-semibold text-text-inverse shadow-glow transition hover:bg-primary-hover"
@@ -161,7 +171,7 @@ export function OpenInstitutionSearchButton() {
       type="button"
     >
       <GraduationCap size={20} />
-      Students and Educators
+      {label}
       <ArrowRight size={18} />
     </button>
   );
