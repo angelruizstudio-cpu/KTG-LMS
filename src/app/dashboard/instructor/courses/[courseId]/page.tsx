@@ -272,7 +272,7 @@ export default async function InstructorCourseDetailPage({
                     </div>
                   );
                 })}
-                <form action={createLessonAction} className="grid gap-3 rounded-2xl bg-background p-3">
+                <form action={createLessonAction} className="grid gap-3 rounded-2xl bg-background p-3" encType="multipart/form-data">
                   <input name="courseId" type="hidden" value={course.id} />
                   <input name="moduleId" type="hidden" value={module.id} />
                   <Input label="Lesson title" name="title" required />
@@ -290,7 +290,8 @@ export default async function InstructorCourseDetailPage({
                     <Input label="Position" name="position" type="number" min={1} defaultValue={(lessonsByModule[module.id]?.length ?? 0) + 1} />
                   </div>
                   <Input label="Video URL" name="videoUrl" placeholder="https://..." />
-                  <Input label="PDF storage path" name="pdfPath" placeholder="lesson-files/course/file.pdf" />
+                  <Input label="Upload PDF file" name="pdfFile" type="file" accept="application/pdf" />
+                  <Input label="PDF storage path" name="pdfPath" placeholder="tenant/course/module/file.pdf" />
                   <Textarea label="Text content" name="content" />
                   <Textarea label="Assignment prompt" name="assignmentPrompt" />
                   <Button className="w-fit" size="sm" type="submit">

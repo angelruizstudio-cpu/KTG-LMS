@@ -15,7 +15,7 @@ A custom LMS starter for Dosis de Esperanza Educa built with Next.js App Router,
 - Separate platform admin portal for managing LMS institutions
 - Admin user management and instructor creation
 - Instructor course creation with modules and lessons
-- Lesson support for video links, PDF storage paths, text, assignments, and quizzes
+- Lesson support for video links, PDF uploads/storage paths, text, assignments, and quizzes
 - Program-based student access, prerequisites, and progress tracking
 - Instructor enrolled-student view
 - Basic quiz attempts and gradebook entries
@@ -132,7 +132,7 @@ on conflict (user_id) do update set status = 'active';
 
 ## Supabase Storage
 
-The schema creates a private `lesson-files` bucket. Instructors and admins can upload files, and authenticated users can read course materials. The current v1 UI stores a PDF path on lessons; a production upload widget can be added on top of the existing bucket policy.
+The schema creates a private `lesson-files` bucket. Instructors and admins can upload PDF lesson files from the course authoring screen, and students receive signed links when viewing assigned lessons.
 
 ## Folder structure
 

@@ -55,6 +55,14 @@ export default async function StudentCoursePage({
   ]);
 
   const completedIds = new Set((progress ?? []).filter((item) => item.completed).map((item) => item.lesson_id));
+  const pdfPaths = (lessons ?? []).map((lesson) => lesson.pdf_path).filter((path): path is string => Boolean(path));
+  const signedPdfEntries = await Promise.all(
+    pdfPaths.map(async (path) => {
+      const { data } = await supabase.storage.from("lesson-files").createSignedUrl(path, 60 * 60);
+      return [path, data?.signedUrl ?? null] as const;
+    })
+  );
+  const signedPdfUrls = new Map(signedPdfEntries.filter((entry): entry is readonly [string, string] => Boolean(entry[1])));
   const lessonsByModule = (lessons ?? []).reduce<Record<string, LessonRow[]>>((acc, lesson) => {
     acc[lesson.module_id] = [...(acc[lesson.module_id] ?? []), lesson];
     return acc;
@@ -128,7 +136,21 @@ export default async function StudentCoursePage({
                         Open video
                       </a>
                     ) : null}
-                    {lesson.pdf_path ? <p className="mt-4 text-sm text-text-secondary">PDF path: {lesson.pdf_path}</p> : null}
+                    {lesson.pdf_path ? (
+                      signedPdfUrls.get(lesson.pdf_path) ? (
+                        <a
+                          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-secondary-light px-4 py-2 text-sm font-semibold text-secondary-hover transition hover:bg-primary-light hover:text-primary-hover"
+                          href={signedPdfUrls.get(lesson.pdf_path)}
+                          rel="noreferrer"
+                          target="_blank"
+                        >
+                          <UploadCloud size={16} />
+                          Open PDF
+                        </a>
+                      ) : (
+                        <p className="mt-4 text-sm text-text-secondary">PDF file is temporarily unavailable.</p>
+                      )
+                    ) : null}
                     {lesson.content ? <p className="mt-4 whitespace-pre-line text-sm leading-6 text-text-secondary">{lesson.content}</p> : null}
                     {lesson.assignment_prompt ? (
                       <div className="mt-4 rounded-xl bg-background p-3 text-sm text-text-secondary">

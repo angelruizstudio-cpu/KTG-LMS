@@ -32,6 +32,8 @@ const lessonSchema = z.object({
   position: z.coerce.number().int().min(1)
 });
 
+const maxPdfBytes = 25 * 1024 * 1024;
+
 const quizSchema = z.object({
   courseId: z.string().uuid(),
   lessonId: z.string().uuid(),
@@ -127,7 +129,7 @@ export async function createModuleAction(formData: FormData) {
 }
 
 export async function createLessonAction(formData: FormData) {
-  await requireProfile(["instructor", "admin"]);
+  const { profile } = await requireProfile(["instructor", "admin"]);
   const courseId = String(formData.get("courseId"));
   const parsed = lessonSchema.safeParse({
     moduleId: formData.get("moduleId"),
@@ -145,12 +147,44 @@ export async function createLessonAction(formData: FormData) {
   }
 
   const supabase = await createSupabaseServerClient();
+  const pdfFile = formData.get("pdfFile");
+  let pdfPath = parsed.data.pdfPath || null;
+
+  if (pdfFile instanceof File && pdfFile.size > 0) {
+    const isPdf = pdfFile.type === "application/pdf" || pdfFile.name.toLowerCase().endsWith(".pdf");
+
+    if (!isPdf) {
+      redirect(`/dashboard/instructor/courses/${courseId}?error=Only PDF files can be uploaded for PDF lessons.`);
+    }
+
+    if (pdfFile.size > maxPdfBytes) {
+      redirect(`/dashboard/instructor/courses/${courseId}?error=PDF files must be 25MB or smaller.`);
+    }
+
+    const safeFileName = slugify(pdfFile.name.replace(/\.pdf$/i, "")) || "lesson-file";
+    const storagePath = `${profile.default_tenant_id}/${courseId}/${parsed.data.moduleId}/${Date.now().toString(36)}-${safeFileName}.pdf`;
+    const { error: uploadError } = await supabase.storage.from("lesson-files").upload(storagePath, pdfFile, {
+      contentType: "application/pdf",
+      upsert: false
+    });
+
+    if (uploadError) {
+      redirect(`/dashboard/instructor/courses/${courseId}?error=${encodeURIComponent(uploadError.message)}`);
+    }
+
+    pdfPath = storagePath;
+  }
+
+  if (parsed.data.lessonType === "pdf" && !pdfPath) {
+    redirect(`/dashboard/instructor/courses/${courseId}?error=Upload a PDF file or provide a PDF storage path.`);
+  }
+
   await supabase.from("lessons").insert({
     module_id: parsed.data.moduleId,
     title: parsed.data.title,
     lesson_type: parsed.data.lessonType,
     video_url: parsed.data.videoUrl || null,
-    pdf_path: parsed.data.pdfPath || null,
+    pdf_path: pdfPath,
     content: parsed.data.content || null,
     assignment_prompt: parsed.data.assignmentPrompt || null,
     position: parsed.data.position
