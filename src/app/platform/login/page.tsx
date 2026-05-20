@@ -34,6 +34,11 @@ export default async function PlatformLoginPage({
             Open platform portal
           </Button>
         </form>
+        <p className="mt-5 text-center text-sm">
+          <Link className="font-semibold text-primary-hover" href="/auth/forgot-password?accountType=platform">
+            Forgot your password?
+          </Link>
+        </p>
         <p className="mt-6 text-center text-sm">
           <Link className="font-semibold text-primary-hover" href="/auth/login">
             Institution login

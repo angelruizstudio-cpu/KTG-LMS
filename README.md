@@ -6,6 +6,7 @@ A custom LMS starter for Dosis de Esperanza Educa built with Next.js App Router,
 
 - Public landing page
 - Login and registration with Supabase Auth
+- Password reset flow for institution users and platform administrators
 - Protected dashboard routes
 - Role-based dashboards for admins, instructors, and students
 - Multi-tenant foundation with tenant-scoped users, programs, courses, and RLS
@@ -53,6 +54,13 @@ A custom LMS starter for Dosis de Esperanza Educa built with Next.js App Router,
    STRIPE_SECRET_KEY=sk_test_...
    STRIPE_WEBHOOK_SECRET=whsec_...
    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
+   ```
+
+   `NEXT_PUBLIC_SITE_URL` is used for Supabase email links, including password reset links. In Supabase Auth settings, add your local and production URLs to the allowed redirect URLs, for example:
+
+   ```text
+   http://localhost:3001/auth/callback
+   https://your-domain.com/auth/callback
    ```
 
 4. Run the Supabase schema:
@@ -106,6 +114,8 @@ The starter creates a default tenant named `Dosis Educa`. Every user belongs to 
 Users may belong to more than one tenant. Each tenant membership receives a unique institution ID in `tenant_user_identities`, such as `DOSIS-000001`. Institution users log in with that ID and their password, so they do not choose an institution during login. The ID resolves the tenant automatically and sets `profiles.default_tenant_id`.
 
 Platform-level LMS administrators use `/platform/login`. Institution admins use the regular institution login and manage only their active tenant from `/dashboard/admin`.
+
+Password reset starts at `/auth/forgot-password`. Institution users reset with their institution ID, while platform administrators reset with their platform admin email. Supabase sends the recovery email and returns users through `/auth/callback?next=/auth/reset-password`.
 
 Platform admins create institutions from `/platform`. Each new institution gets a code, slug, and first institution admin. Institution admins manage members, courses, programs, finance clearance, and certificates inside their own dashboard.
 

@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 export default async function LoginPage({
   searchParams
 }: {
-  searchParams: Promise<{ error?: string; institutionName?: string; institutionUserId?: string; next?: string }>;
+  searchParams: Promise<{ error?: string; institutionName?: string; institutionUserId?: string; message?: string; next?: string }>;
 }) {
   const params = await searchParams;
 
@@ -29,6 +29,11 @@ export default async function LoginPage({
             {params.error}
           </div>
         ) : null}
+        {params.message ? (
+          <div className="mt-5 rounded-xl border border-success bg-success-light px-3 py-2 text-sm text-success">
+            {params.message}
+          </div>
+        ) : null}
         <form action={loginAction} className="mt-6 grid gap-4">
           <input name="next" type="hidden" value={params.next ?? "/dashboard"} />
           <Input
@@ -45,7 +50,12 @@ export default async function LoginPage({
             Log in
           </Button>
         </form>
-        <p className="mt-6 text-center text-sm text-text-secondary">Need access? Contact your institution administrator.</p>
+        <p className="mt-5 text-center text-sm">
+          <Link className="font-semibold text-primary-hover" href="/auth/forgot-password">
+            Forgot your password?
+          </Link>
+        </p>
+        <p className="mt-4 text-center text-sm text-text-secondary">Need access? Contact your institution administrator.</p>
         <p className="mt-3 text-center text-sm">
           <Link className="font-semibold text-primary-hover" href="/platform/login">
             Platform administrator login

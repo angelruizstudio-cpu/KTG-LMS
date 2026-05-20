@@ -17,6 +17,31 @@ const registerSchema = z.object({
   password: z.string().min(8)
 });
 
+const passwordResetRequestSchema = z.discriminatedUnion("accountType", [
+  z.object({
+    accountType: z.literal("institution"),
+    institutionUserId: z.string().min(3)
+  }),
+  z.object({
+    accountType: z.literal("platform"),
+    email: z.string().email()
+  })
+]);
+
+const updatePasswordSchema = z
+  .object({
+    password: z.string().min(8),
+    confirmPassword: z.string().min(8)
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords must match.",
+    path: ["confirmPassword"]
+  });
+
+function siteUrl() {
+  return process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3001";
+}
+
 export async function loginAction(formData: FormData) {
   const parsed = loginSchema.safeParse({
     institutionUserId: formData.get("institutionUserId"),
@@ -82,7 +107,7 @@ export async function registerAction(formData: FormData) {
         full_name: parsed.data.fullName,
         role: "student"
       },
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/auth/callback`
+      emailRedirectTo: `${siteUrl()}/auth/callback`
     }
   });
 
@@ -91,6 +116,87 @@ export async function registerAction(formData: FormData) {
   }
 
   redirect("/dashboard");
+}
+
+export async function requestPasswordResetAction(formData: FormData) {
+  const accountType = String(formData.get("accountType"));
+  const parsed = passwordResetRequestSchema.safeParse(
+    accountType === "platform"
+      ? {
+          accountType,
+          email: formData.get("email")
+        }
+      : {
+          accountType: "institution",
+          institutionUserId: formData.get("institutionUserId")
+        }
+  );
+
+  if (!parsed.success) {
+    redirect("/auth/forgot-password?error=Enter a valid institution ID or platform email.");
+  }
+
+  let email: string | null = null;
+
+  if (parsed.data.accountType === "institution") {
+    const institutionUserId = parsed.data.institutionUserId.trim().toUpperCase();
+    const admin = createSupabaseAdminClient();
+    const { data: identity } = await admin
+      .from("tenant_user_identities")
+      .select("user_id,status")
+      .eq("institution_user_id", institutionUserId)
+      .eq("status", "active")
+      .maybeSingle();
+
+    if (identity) {
+      const { data: profile } = await admin.from("profiles").select("email").eq("id", identity.user_id).maybeSingle();
+      email = profile?.email ?? null;
+    }
+  } else {
+    const admin = createSupabaseAdminClient();
+    const { data: profile } = await admin.from("profiles").select("id,email").eq("email", parsed.data.email.toLowerCase()).maybeSingle();
+    if (profile) {
+      const { data: platformAdmin } = await admin
+        .from("platform_admins")
+        .select("status")
+        .eq("user_id", profile.id)
+        .eq("status", "active")
+        .maybeSingle();
+      email = platformAdmin ? profile.email : null;
+    }
+  }
+
+  if (email) {
+    const supabase = await createSupabaseServerClient();
+    await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${siteUrl()}/auth/callback?next=/auth/reset-password`
+    });
+  }
+
+  redirect("/auth/forgot-password?sent=1");
+}
+
+export async function updatePasswordAction(formData: FormData) {
+  const parsed = updatePasswordSchema.safeParse({
+    password: formData.get("password"),
+    confirmPassword: formData.get("confirmPassword")
+  });
+
+  if (!parsed.success) {
+    redirect("/auth/reset-password?error=Use matching passwords with at least 8 characters.");
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.auth.updateUser({
+    password: parsed.data.password
+  });
+
+  if (error) {
+    redirect(`/auth/reset-password?error=${encodeURIComponent(error.message)}`);
+  }
+
+  await supabase.auth.signOut();
+  redirect("/auth/login?message=Password updated. Please log in with your new password.");
 }
 
 export async function signOutAction() {
