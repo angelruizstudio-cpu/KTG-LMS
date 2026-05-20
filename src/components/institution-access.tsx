@@ -1,10 +1,8 @@
 "use client";
 
-import { ArrowRight, Building2, GraduationCap, ShieldCheck } from "lucide-react";
+import { ArrowRight, Building2, GraduationCap } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-
-import { LinkButton } from "@/components/ui/link-button";
 
 type Institution = {
   code: string;
@@ -63,27 +61,6 @@ export function InstitutionAccess() {
 
   return (
     <div className="grid gap-5 lg:ml-auto lg:w-[560px]">
-      <div className="grid max-w-[460px] gap-4 lg:hidden">
-        <button
-          className="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-primary px-6 text-base font-semibold text-text-inverse shadow-glow transition hover:bg-primary-hover"
-          onClick={() => setIsSearchOpen(true)}
-          type="button"
-        >
-          <GraduationCap size={20} />
-          Students and Educators
-          <ArrowRight size={18} />
-        </button>
-        <LinkButton
-          className="h-14 rounded-full border-white/70 bg-surface text-base hover:border-accent hover:bg-secondary-light"
-          href="/platform/login"
-          size="lg"
-          variant="secondary"
-        >
-          <ShieldCheck size={20} />
-          Platform Administrator
-        </LinkButton>
-      </div>
-
       {isSearchOpen ? (
         <aside className="rounded-[2rem] border border-white/20 bg-secondary p-7 text-text-inverse shadow-blueglow sm:p-9">
           <div className="flex items-start gap-4">
