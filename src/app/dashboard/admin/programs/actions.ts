@@ -44,8 +44,19 @@ const financeClearanceSchema = z.object({
   programId: z.string().uuid(),
   studentId: z.string().uuid(),
   status: z.enum(["hold", "cleared"]),
-  notes: z.string().optional()
+  notes: z.string().optional(),
+  returnTo: z.enum(["programs", "finance"]).default("programs")
 });
+
+const certificateRequestSchema = z.object({
+  programId: z.string().uuid(),
+  studentId: z.string().uuid(),
+  returnTo: z.enum(["programs", "finance"]).default("programs")
+});
+
+function adminTargetPath(returnTo: "programs" | "finance") {
+  return returnTo === "finance" ? "/dashboard/admin/finance" : "/dashboard/admin/programs";
+}
 
 export async function createProgramAction(formData: FormData) {
   const { profile } = await requireProfile(["admin"]);
@@ -321,11 +332,13 @@ export async function updateFinanceClearanceAction(formData: FormData) {
     programId: formData.get("programId"),
     studentId: formData.get("studentId"),
     status: formData.get("status"),
-    notes: formData.get("notes") || ""
+    notes: formData.get("notes") || "",
+    returnTo: formData.get("returnTo") || "programs"
   });
 
   if (!parsed.success) {
-    redirect("/dashboard/admin/programs?error=Finance clearance details are invalid.");
+    const targetPath = String(formData.get("returnTo")) === "finance" ? "/dashboard/admin/finance" : "/dashboard/admin/programs";
+    redirect(`${targetPath}?error=Finance clearance details are invalid.`);
   }
 
   const supabase = await createSupabaseServerClient();
@@ -341,7 +354,7 @@ export async function updateFinanceClearanceAction(formData: FormData) {
   );
 
   if (error) {
-    redirect(`/dashboard/admin/programs?error=${encodeURIComponent(error.message)}`);
+    redirect(`${adminTargetPath(parsed.data.returnTo)}?error=${encodeURIComponent(error.message)}`);
   }
 
   if (parsed.data.status === "cleared") {
@@ -349,30 +362,34 @@ export async function updateFinanceClearanceAction(formData: FormData) {
   }
 
   revalidatePath("/dashboard/admin/programs");
+  revalidatePath("/dashboard/admin/finance");
   revalidatePath("/dashboard/student/certificates");
 }
 
 export async function issueProgramCertificateAction(formData: FormData) {
   const { profile } = await requireProfile(["admin"]);
-  const parsed = financeClearanceSchema.pick({ programId: true, studentId: true }).safeParse({
+  const parsed = certificateRequestSchema.safeParse({
     programId: formData.get("programId"),
-    studentId: formData.get("studentId")
+    studentId: formData.get("studentId"),
+    returnTo: formData.get("returnTo") || "programs"
   });
 
   if (!parsed.success) {
-    redirect("/dashboard/admin/programs?error=Certificate details are invalid.");
+    const targetPath = String(formData.get("returnTo")) === "finance" ? "/dashboard/admin/finance" : "/dashboard/admin/programs";
+    redirect(`${targetPath}?error=Certificate details are invalid.`);
   }
 
   const issued = await issueProgramCertificateIfEligible(parsed.data.programId, parsed.data.studentId, profile.id);
   if (!issued) {
     redirect(
-      `/dashboard/admin/programs?error=${encodeURIComponent(
+      `${adminTargetPath(parsed.data.returnTo)}?error=${encodeURIComponent(
         "Certificate cannot be issued yet. Confirm all required courses are completed and finance is cleared."
       )}`
     );
   }
 
   revalidatePath("/dashboard/admin/programs");
+  revalidatePath("/dashboard/admin/finance");
   revalidatePath("/dashboard/student/certificates");
 }
 

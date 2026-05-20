@@ -20,6 +20,7 @@ A custom LMS starter for Dosis de Esperanza Educa built with Next.js App Router,
 - Instructor enrolled-student view
 - Basic quiz attempts and gradebook entries
 - Program certificate records generated after all required courses are complete and finance clearance is approved
+- Dedicated finance center for holds, clearances, and certificate release
 - Stripe Checkout enrollment flow for paid courses
 - Supabase Row Level Security policies
 

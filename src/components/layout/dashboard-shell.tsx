@@ -1,4 +1,4 @@
-import { BookOpen, LayoutDashboard, LogOut, Settings, Trophy, UsersRound } from "lucide-react";
+import { BookOpen, CreditCard, LayoutDashboard, LogOut, Settings, Trophy, UsersRound } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -17,6 +17,7 @@ const navByRole: Record<UserRole, Array<{ href: string; labelKey: string; icon: 
     { href: "/dashboard/admin/users", labelKey: "users", icon: UsersRound },
     { href: "/dashboard/admin/programs", labelKey: "programs", icon: BookOpen },
     { href: "/dashboard/admin/courses", labelKey: "courses", icon: BookOpen },
+    { href: "/dashboard/admin/finance", labelKey: "finance", icon: CreditCard },
     { href: "/dashboard/admin/settings", labelKey: "settings", icon: Settings }
   ],
   instructor: [
