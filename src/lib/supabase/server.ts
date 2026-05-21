@@ -36,3 +36,18 @@ export function createSupabaseAdminClient() {
     }
   });
 }
+
+export function tryCreateSupabaseAdminClient() {
+  const serviceRoleKey = env("SUPABASE_SERVICE_ROLE_KEY");
+
+  if (!serviceRoleKey) {
+    return null;
+  }
+
+  return createClient(supabaseUrl, serviceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  });
+}

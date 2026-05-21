@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
-import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient, createSupabaseServerClient, tryCreateSupabaseAdminClient } from "@/lib/supabase/server";
 
 const loginSchema = z.object({
   institutionUserId: z.string().min(3),
@@ -40,6 +40,11 @@ const updatePasswordSchema = z
 
 function siteUrl() {
   return process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3001";
+}
+
+function forgotPasswordPath(accountType: "institution" | "platform", params: Record<string, string | number> = {}) {
+  const query = new URLSearchParams({ accountType, ...Object.fromEntries(Object.entries(params).map(([key, value]) => [key, String(value)])) });
+  return `/auth/forgot-password?${query.toString()}`;
 }
 
 export async function loginAction(formData: FormData) {
@@ -120,6 +125,7 @@ export async function registerAction(formData: FormData) {
 
 export async function requestPasswordResetAction(formData: FormData) {
   const accountType = String(formData.get("accountType"));
+  const accountTypeForRedirect = accountType === "platform" ? "platform" : "institution";
   const parsed = passwordResetRequestSchema.safeParse(
     accountType === "platform"
       ? {
@@ -133,47 +139,83 @@ export async function requestPasswordResetAction(formData: FormData) {
   );
 
   if (!parsed.success) {
-    redirect("/auth/forgot-password?error=Enter a valid institution ID or platform email.");
+    redirect(forgotPasswordPath(accountTypeForRedirect, { error: "Enter a valid institution ID or platform email." }));
   }
 
   let email: string | null = null;
+  const admin = tryCreateSupabaseAdminClient();
 
-  if (parsed.data.accountType === "institution") {
-    const institutionUserId = parsed.data.institutionUserId.trim().toUpperCase();
-    const admin = createSupabaseAdminClient();
-    const { data: identity } = await admin
-      .from("tenant_user_identities")
-      .select("user_id,status")
-      .eq("institution_user_id", institutionUserId)
-      .eq("status", "active")
-      .maybeSingle();
+  if (!admin) {
+    redirect(
+      forgotPasswordPath(parsed.data.accountType, {
+        error: "Password reset is temporarily unavailable. Contact support."
+      })
+    );
+  }
 
-    if (identity) {
-      const { data: profile } = await admin.from("profiles").select("email").eq("id", identity.user_id).maybeSingle();
-      email = profile?.email ?? null;
-    }
-  } else {
-    const admin = createSupabaseAdminClient();
-    const { data: profile } = await admin.from("profiles").select("id,email").eq("email", parsed.data.email.toLowerCase()).maybeSingle();
-    if (profile) {
-      const { data: platformAdmin } = await admin
-        .from("platform_admins")
-        .select("status")
-        .eq("user_id", profile.id)
+  try {
+    if (parsed.data.accountType === "institution") {
+      const institutionUserId = parsed.data.institutionUserId.trim().toUpperCase();
+      const { data: identity } = await admin
+        .from("tenant_user_identities")
+        .select("user_id,status")
+        .eq("institution_user_id", institutionUserId)
         .eq("status", "active")
         .maybeSingle();
-      email = platformAdmin ? profile.email : null;
+
+      if (identity) {
+        const { data: profile } = await admin.from("profiles").select("email").eq("id", identity.user_id).maybeSingle();
+        email = profile?.email ?? null;
+      }
+    } else {
+      const { data: profile } = await admin.from("profiles").select("id,email").eq("email", parsed.data.email.toLowerCase()).maybeSingle();
+      if (profile) {
+        const { data: platformAdmin } = await admin
+          .from("platform_admins")
+          .select("status")
+          .eq("user_id", profile.id)
+          .eq("status", "active")
+          .maybeSingle();
+        email = platformAdmin ? profile.email : null;
+      }
     }
+  } catch (error) {
+    console.error("Password reset lookup failed", error);
+    redirect(
+      forgotPasswordPath(parsed.data.accountType, {
+        error: "Password reset is temporarily unavailable. Contact support."
+      })
+    );
   }
 
   if (email) {
     const supabase = await createSupabaseServerClient();
-    await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${siteUrl()}/auth/callback?next=/auth/reset-password`
-    });
+    let resetEmailFailed = false;
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${siteUrl()}/auth/callback?next=/auth/reset-password`
+      });
+
+      if (error) {
+        console.error("Password reset email failed", error);
+        resetEmailFailed = true;
+      }
+    } catch (error) {
+      console.error("Password reset email failed", error);
+      resetEmailFailed = true;
+    }
+
+    if (resetEmailFailed) {
+      redirect(
+        forgotPasswordPath(parsed.data.accountType, {
+          error: "Password reset email could not be sent. Check Supabase Auth email settings."
+        })
+      );
+    }
   }
 
-  redirect("/auth/forgot-password?sent=1");
+  redirect(forgotPasswordPath(parsed.data.accountType, { sent: 1 }));
 }
 
 export async function updatePasswordAction(formData: FormData) {
