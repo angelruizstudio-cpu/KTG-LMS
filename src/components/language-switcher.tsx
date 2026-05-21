@@ -2,6 +2,39 @@ import { setLanguageAction } from "@/app/language-actions";
 import { languages, type AppLanguage } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
+function FlagIcon({ language }: { language: AppLanguage }) {
+  if (language === "es") {
+    return (
+      <span aria-hidden="true" className="relative block h-4 w-6 overflow-hidden rounded-[3px] border border-white/40 shadow-sm">
+        <span className="absolute inset-0 bg-[repeating-linear-gradient(to_bottom,#d11f3f_0_20%,#fff_20%_40%)]" />
+        <span className="absolute left-0 top-0 h-0 w-0 border-y-[8px] border-l-[13px] border-y-transparent border-l-[#0050a4]" />
+        <span className="absolute left-[3px] top-[5px] text-[7px] leading-none text-white">★</span>
+      </span>
+    );
+  }
+
+  if (language === "zh") {
+    return (
+      <span aria-hidden="true" className="relative block h-4 w-6 overflow-hidden rounded-[3px] border border-white/40 bg-[#de2910] shadow-sm">
+        <span className="absolute left-[3px] top-[2px] text-[8px] leading-none text-[#ffde00]">★</span>
+        <span className="absolute left-[11px] top-[2px] size-1 rounded-full bg-[#ffde00]" />
+        <span className="absolute left-[14px] top-[5px] size-1 rounded-full bg-[#ffde00]" />
+        <span className="absolute left-[13px] top-[9px] size-1 rounded-full bg-[#ffde00]" />
+        <span className="absolute left-[10px] top-[12px] size-1 rounded-full bg-[#ffde00]" />
+      </span>
+    );
+  }
+
+  return (
+    <span aria-hidden="true" className="relative block h-4 w-6 overflow-hidden rounded-[3px] border border-white/40 shadow-sm">
+      <span className="absolute inset-0 bg-[repeating-linear-gradient(to_bottom,#b22234_0_8%,#fff_8%_16%)]" />
+      <span className="absolute left-0 top-0 h-[9px] w-[11px] bg-[#3c3b6e]" />
+      <span className="absolute left-[2px] top-[1px] text-[5px] leading-none tracking-[1px] text-white">••</span>
+      <span className="absolute left-[2px] top-[4px] text-[5px] leading-none tracking-[1px] text-white">••</span>
+    </span>
+  );
+}
+
 export function LanguageSwitcher({
   currentPath = "/",
   language,
@@ -37,9 +70,7 @@ export function LanguageSwitcher({
             title={languages[item].label}
             type="submit"
           >
-            <span aria-hidden="true" className="text-base leading-none">
-              {languages[item].flag}
-            </span>
+            <FlagIcon language={item} />
           </button>
         </form>
       ))}
