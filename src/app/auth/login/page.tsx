@@ -57,7 +57,7 @@ export default async function LoginPage({
           </Button>
         </form>
         <p className="mt-5 text-center text-sm">
-          <Link className="font-semibold text-primary-hover" href="/auth/forgot-password">
+          <Link className="font-semibold text-primary-hover" href="/auth/forgot-password?accountType=institution">
             {t.common.forgotPassword}
           </Link>
         </p>

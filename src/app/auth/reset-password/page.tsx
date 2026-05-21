@@ -63,7 +63,7 @@ export default async function ResetPasswordPage({
         )}
 
         <p className="mt-6 text-center text-sm">
-          <Link className="font-semibold text-primary-hover" href="/auth/forgot-password">
+          <Link className="font-semibold text-primary-hover" href="/auth/forgot-password?accountType=institution">
             {t.auth.requestNewLink}
           </Link>
         </p>
