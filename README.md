@@ -69,6 +69,15 @@ A custom LMS starter for Dosis de Esperanza Educa built with Next.js App Router,
 
    Open the Supabase SQL editor and execute `supabase/schema.sql`.
 
+   For pre-demo QA data, create the QA Auth users first, then run:
+
+   ```text
+   supabase/qa/001_seed_demo_data.sql
+   supabase/qa/002_verify_demo_data.sql
+   ```
+
+   See `supabase/qa/README.md` for test accounts, institution IDs, and expected checks.
+
 5. Create the first admin:
 
    Register normally in the app, then promote that profile in Supabase:
