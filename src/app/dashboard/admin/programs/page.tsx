@@ -14,7 +14,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { requireProfile } from "@/lib/auth";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
 type Program = { id: string; name: string; description: string | null; active: boolean };
 type Course = { id: string; title: string; status: string };
@@ -64,35 +64,72 @@ export default async function AdminProgramsPage({
 }) {
   const { profile } = await requireProfile(["admin"]);
   const params = await searchParams;
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
   const [
-    { data: programs },
-    { data: courses },
-    { data: studentIdentities },
-    { data: programCourses },
-    { data: programEnrollments },
-    { data: prerequisites },
-    { data: financeClearances },
-    { data: programCertificates },
-    { data: courseEnrollments }
+    programsResult,
+    coursesResult,
+    studentIdentitiesResult
   ] = await Promise.all([
-      supabase.from("programs").select("*").order("created_at", { ascending: false }),
-      supabase.from("courses").select("id,title,status").order("title"),
+      supabase.from("programs").select("*").eq("tenant_id", profile.default_tenant_id).order("created_at", { ascending: false }),
+      supabase.from("courses").select("id,title,status").eq("tenant_id", profile.default_tenant_id).order("title"),
       supabase
         .from("tenant_user_identities")
         .select("user_id,institution_user_id,profiles:user_id(full_name,email)")
         .eq("tenant_id", profile.default_tenant_id)
         .eq("role", "student")
         .eq("status", "active")
-        .order("institution_user_id"),
-      supabase.from("program_courses").select("*, courses(title,status)").order("position"),
-      supabase.from("program_enrollments").select("*, profiles:student_id(full_name,email)").order("enrolled_at", { ascending: false }),
-      supabase.from("course_prerequisites").select("*, prerequisite:prerequisite_course_id(title), course:course_id(title)"),
-      supabase.from("finance_clearances").select("*"),
-      supabase.from("program_certificates").select("*"),
-      supabase.from("enrollments").select("course_id,student_id,status")
+        .order("institution_user_id")
     ]);
-  const students: Student[] = (studentIdentities ?? []).map((identity) => {
+  const programs = (programsResult.data ?? []) as Program[];
+  const courses = (coursesResult.data ?? []) as Course[];
+  const tenantProgramIds = programs.map((program) => program.id);
+  const tenantCourseIds = courses.map((course) => course.id);
+  const [
+    programCoursesResult,
+    programEnrollmentsResult,
+    prerequisitesResult,
+    financeClearancesResult,
+    programCertificatesResult,
+    courseEnrollmentsResult
+  ] = await Promise.all([
+      tenantProgramIds.length
+        ? supabase.from("program_courses").select("*, courses(title,status)").in("program_id", tenantProgramIds).order("position")
+        : Promise.resolve({ data: [], error: null }),
+      tenantProgramIds.length
+        ? supabase
+            .from("program_enrollments")
+            .select("*, profiles:student_id(full_name,email)")
+            .in("program_id", tenantProgramIds)
+            .order("enrolled_at", { ascending: false })
+        : Promise.resolve({ data: [], error: null }),
+      tenantCourseIds.length
+        ? supabase
+            .from("course_prerequisites")
+            .select("*, prerequisite:prerequisite_course_id(title), course:course_id(title)")
+            .in("course_id", tenantCourseIds)
+        : Promise.resolve({ data: [], error: null }),
+      tenantProgramIds.length ? supabase.from("finance_clearances").select("*").in("program_id", tenantProgramIds) : Promise.resolve({ data: [], error: null }),
+      tenantProgramIds.length ? supabase.from("program_certificates").select("*").in("program_id", tenantProgramIds) : Promise.resolve({ data: [], error: null }),
+      tenantCourseIds.length ? supabase.from("enrollments").select("course_id,student_id,status").in("course_id", tenantCourseIds) : Promise.resolve({ data: [], error: null })
+    ]);
+  const dataErrors = [
+    programsResult.error?.message,
+    coursesResult.error?.message,
+    studentIdentitiesResult.error?.message,
+    programCoursesResult.error?.message,
+    programEnrollmentsResult.error?.message,
+    prerequisitesResult.error?.message,
+    financeClearancesResult.error?.message,
+    programCertificatesResult.error?.message,
+    courseEnrollmentsResult.error?.message
+  ].filter(Boolean);
+  const programCourses = (programCoursesResult.data ?? []) as ProgramCourseWithCourse[];
+  const programEnrollments = (programEnrollmentsResult.data ?? []) as ProgramEnrollmentWithProfile[];
+  const prerequisites = (prerequisitesResult.data ?? []) as PrerequisiteWithNames[];
+  const financeClearances = (financeClearancesResult.data ?? []) as FinanceClearance[];
+  const programCertificates = (programCertificatesResult.data ?? []) as ProgramCertificate[];
+  const courseEnrollments = (courseEnrollmentsResult.data ?? []) as CourseEnrollment[];
+  const students: Student[] = (studentIdentitiesResult.data ?? []).map((identity) => {
     const studentProfile = Array.isArray(identity.profiles) ? identity.profiles[0] : identity.profiles;
 
     return {
@@ -128,6 +165,11 @@ export default async function AdminProgramsPage({
       {params.error ? (
         <div className="rounded-xl border border-error bg-error-light px-3 py-2 text-sm text-error">{params.error}</div>
       ) : null}
+      {dataErrors.length ? (
+        <div className="rounded-xl border border-error bg-error-light px-3 py-2 text-sm text-error">
+          Unable to load program data: {dataErrors.join(" ")}
+        </div>
+      ) : null}
       {params.access ? (
         <div className="rounded-xl border border-success bg-success-light px-3 py-2 text-sm font-semibold text-success">
           Opened {params.access} eligible course{params.access === "1" ? "" : "s"} for the selected student.
@@ -161,7 +203,7 @@ export default async function AdminProgramsPage({
           </CardHeader>
           <CardContent>
             <form action={assignStudentToProgramAction} className="grid gap-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
-              <SelectField label="Program" name="programId" options={(programs ?? []).map((program: Program) => [program.id, program.name])} />
+              <SelectField emptyLabel="Create a program first" label="Program" name="programId" options={programs.map((program) => [program.id, program.name])} />
               <SelectField
                 label="Student"
                 name="studentId"
@@ -182,8 +224,8 @@ export default async function AdminProgramsPage({
         </CardHeader>
         <CardContent className="grid gap-5">
           <form action={addCourseToProgramAction} className="grid gap-4 lg:grid-cols-[1fr_1fr_120px_120px_auto] lg:items-end">
-            <SelectField label="Program" name="programId" options={(programs ?? []).map((program: Program) => [program.id, program.name])} />
-            <SelectField label="Course" name="courseId" options={(courses ?? []).map((course: Course) => [course.id, course.title])} />
+            <SelectField emptyLabel="Create a program first" label="Program" name="programId" options={programs.map((program) => [program.id, program.name])} />
+            <SelectField emptyLabel="Create a course first" label="Course" name="courseId" options={courses.map((course) => [course.id, course.title])} />
             <Input label="Order" name="position" type="number" min={1} defaultValue={1} />
             <label className="flex h-11 items-center gap-2 text-sm font-medium text-text-secondary">
               <input className="size-4 accent-primary" defaultChecked name="required" type="checkbox" />
@@ -193,11 +235,12 @@ export default async function AdminProgramsPage({
           </form>
 
           <form action={addPrerequisiteAction} className="grid gap-4 lg:grid-cols-[1fr_1fr_auto] lg:items-end">
-            <SelectField label="Course to unlock" name="courseId" options={(courses ?? []).map((course: Course) => [course.id, course.title])} />
+            <SelectField emptyLabel="Create a course first" label="Course to unlock" name="courseId" options={courses.map((course) => [course.id, course.title])} />
             <SelectField
+              emptyLabel="Create a course first"
               label="Required prerequisite"
               name="prerequisiteCourseId"
-              options={(courses ?? []).map((course: Course) => [course.id, course.title])}
+              options={courses.map((course) => [course.id, course.title])}
             />
             <Button type="submit" variant="secondary">
               Add prerequisite
@@ -220,7 +263,7 @@ export default async function AdminProgramsPage({
                 `${student.institution_user_id ?? "ID"} - ${student.full_name} (${student.email})`
               ])}
             />
-            <SelectField label="Course" name="courseId" options={(courses ?? []).map((course: Course) => [course.id, course.title])} />
+            <SelectField emptyLabel="Create a course first" label="Course" name="courseId" options={courses.map((course) => [course.id, course.title])} />
             <Button type="submit">Grant access</Button>
           </form>
         </CardContent>
@@ -232,7 +275,7 @@ export default async function AdminProgramsPage({
         </CardHeader>
         <CardContent>
           <form action={updateFinanceClearanceAction} className="grid gap-4 lg:grid-cols-[1fr_1fr_130px_1fr_auto] lg:items-end">
-            <SelectField label="Program" name="programId" options={(programs ?? []).map((program: Program) => [program.id, program.name])} />
+            <SelectField emptyLabel="Create a program first" label="Program" name="programId" options={programs.map((program) => [program.id, program.name])} />
             <SelectField
               label="Student"
               name="studentId"
@@ -365,10 +408,12 @@ export default async function AdminProgramsPage({
 }
 
 function SelectField({
+  emptyLabel = "Select...",
   label,
   name,
   options
 }: {
+  emptyLabel?: string;
   label: string;
   name: string;
   options: Array<[string, string]>;
@@ -377,7 +422,7 @@ function SelectField({
     <label className="grid gap-2 text-sm font-medium text-text-secondary">
       {label}
       <select className="h-11 rounded-xl border border-border bg-surface px-3 text-sm text-text-primary" name={name} required>
-        <option value="">Select...</option>
+        <option value="">{options.length ? "Select..." : emptyLabel}</option>
         {options.map(([value, text]) => (
           <option key={value} value={value}>
             {text}

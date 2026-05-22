@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { requireProfile } from "@/lib/auth";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
 import { slugify } from "@/lib/utils";
 
 const programSchema = z.object({
@@ -69,7 +69,7 @@ export async function createProgramAction(formData: FormData) {
     redirect("/dashboard/admin/programs?error=Program details are invalid.");
   }
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
   const { error } = await supabase.from("programs").insert({
     tenant_id: profile.default_tenant_id,
     name: parsed.data.name,
