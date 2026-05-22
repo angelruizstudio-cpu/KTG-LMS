@@ -82,6 +82,7 @@ export async function createProgramAction(formData: FormData) {
   }
 
   revalidatePath("/dashboard/admin/programs");
+  redirect(`/dashboard/admin/programs?created=${encodeURIComponent(parsed.data.name)}`);
 }
 
 export async function addCourseToProgramAction(formData: FormData) {

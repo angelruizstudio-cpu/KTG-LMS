@@ -60,7 +60,7 @@ type CourseEnrollment = {
 export default async function AdminProgramsPage({
   searchParams
 }: {
-  searchParams: Promise<{ error?: string; access?: string }>;
+  searchParams: Promise<{ error?: string; access?: string; created?: string }>;
 }) {
   const { profile } = await requireProfile(["admin"]);
   const params = await searchParams;
@@ -131,6 +131,11 @@ export default async function AdminProgramsPage({
       {params.access ? (
         <div className="rounded-xl border border-success bg-success-light px-3 py-2 text-sm font-semibold text-success">
           Opened {params.access} eligible course{params.access === "1" ? "" : "s"} for the selected student.
+        </div>
+      ) : null}
+      {params.created ? (
+        <div className="rounded-xl border border-success bg-success-light px-3 py-2 text-sm font-semibold text-success">
+          Program created: {params.created}
         </div>
       ) : null}
 
