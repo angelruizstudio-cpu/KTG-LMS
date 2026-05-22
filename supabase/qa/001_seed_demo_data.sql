@@ -501,7 +501,7 @@ insert into public.certificates (course_id, student_id, certificate_number)
 select
   course.id,
   users.id,
-  'QA-COURSE-' || upper(left(course.slug, 12)) || '-' || upper(left(users.account_key, 8))
+  'QA-COURSE-' || upper(left(regexp_replace(course.slug, '[^a-zA-Z0-9]', '', 'g'), 14)) || '-' || upper(replace(users.account_key, '_', '-'))
 from qa_courses course
 join qa_users users on users.account_key in ('student_active', 'student_complete')
 where (users.account_key = 'student_active' and course.slug = 'qa-biblical-foundations')
