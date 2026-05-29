@@ -1,5 +1,7 @@
 import { env } from "@/lib/env";
 
+import { formatAiKnowledge, type AiKnowledgeSource } from "./ai-knowledge";
+
 export type ProspectAnalysisInput = {
   institutionName: string;
   institutionType: string;
@@ -15,6 +17,7 @@ export type ProspectAnalysisInput = {
   painPoints?: string | null;
   budgetRange?: string | null;
   source?: string | null;
+  knowledgeSources?: AiKnowledgeSource[];
 };
 
 export type ProspectAnalysis = {
@@ -133,9 +136,9 @@ function extractResponseText(payload: unknown) {
 export async function analyzeInstitutionProspect(input: ProspectAnalysisInput): Promise<ProspectAnalysis> {
   const fallback = heuristicAnalysis(input);
   const apiKey = env("OPENAI_API_KEY");
-  const model = env("OPENAI_MODEL");
+  const model = env("OPENAI_MODEL", "gpt-5.2");
 
-  if (!apiKey || !model) {
+  if (!apiKey) {
     return fallback;
   }
 
@@ -152,7 +155,8 @@ export async function analyzeInstitutionProspect(input: ProspectAnalysisInput): 
           {
             role: "system",
             content:
-              "You qualify institutions interested in subscribing to a multi-tenant LMS. Return only JSON with score, priority, summary, nextAction, and emailDraft. Score is 0-100. Priority is low, medium, or high. Keep the tone professional and warm."
+              "You are the Dosis Educa LMS institutional sales assistant. You qualify institutions interested in subscribing to a multi-tenant LMS. Use the platform knowledge below as the primary business context. Return only valid JSON with score, priority, summary, nextAction, and emailDraft. Score is 0-100. Priority is low, medium, or high. Keep the tone professional, warm, concise, and faith-friendly when appropriate.\n\nPlatform knowledge:\n" +
+              formatAiKnowledge(input.knowledgeSources ?? [])
           },
           {
             role: "user",

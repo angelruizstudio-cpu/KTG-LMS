@@ -1,4 +1,4 @@
-import { Bot, Building2 } from "lucide-react";
+import { Bot, Building2, Database } from "lucide-react";
 import Link from "next/link";
 
 import { signOutAction } from "@/app/auth/actions";
@@ -52,13 +52,22 @@ export default async function PlatformDashboardPage({
             <h1 className="mt-2 text-3xl font-bold text-text-primary">LMS administration</h1>
             <p className="mt-2 text-text-secondary">Manage institutions at the platform level.</p>
           </div>
-          <Link
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-text-inverse shadow-glow hover:bg-primary-hover"
-            href="/platform/prospects"
-          >
-            <Bot size={18} />
-            Prospect pipeline
-          </Link>
+          <div className="flex flex-wrap gap-3">
+            <Link
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 text-sm font-semibold text-text-primary shadow-sm hover:border-secondary hover:bg-secondary-light"
+              href="/platform/ai"
+            >
+              <Database size={18} />
+              AI training center
+            </Link>
+            <Link
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-text-inverse shadow-glow hover:bg-primary-hover"
+              href="/platform/prospects"
+            >
+              <Bot size={18} />
+              Prospect pipeline
+            </Link>
+          </div>
         </div>
 
         {params.error ? (

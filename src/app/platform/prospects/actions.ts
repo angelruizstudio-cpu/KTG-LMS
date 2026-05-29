@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
+import { loadActiveAiKnowledge } from "@/lib/ai-knowledge";
 import { analyzeInstitutionProspect } from "@/lib/prospect-ai";
 import { requirePlatformAdmin } from "@/lib/platform-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
@@ -79,6 +80,8 @@ export async function createProspectAction(formData: FormData) {
     redirect("/platform/prospects?error=Prospect details are required.");
   }
 
+  const admin = createSupabaseAdminClient();
+  const knowledgeSources = await loadActiveAiKnowledge(admin);
   const analysis = await analyzeInstitutionProspect({
     institutionName: parsed.data.institutionName,
     institutionType: parsed.data.institutionType,
@@ -90,10 +93,10 @@ export async function createProspectAction(formData: FormData) {
     estimatedStudents: parsed.data.estimatedStudents,
     programsNeeded: parsed.data.programsNeeded,
     painPoints: parsed.data.painPoints,
-    source: parsed.data.source
+    source: parsed.data.source,
+    knowledgeSources
   });
 
-  const admin = createSupabaseAdminClient();
   const { error } = await admin.from("institution_prospects").insert({
     institution_name: parsed.data.institutionName,
     institution_type: parsed.data.institutionType,
@@ -199,6 +202,7 @@ export async function reanalyzeProspectAction(formData: FormData) {
     redirect(`/platform/prospects?error=${encodeURIComponent(loadError?.message ?? "Prospect not found.")}`);
   }
 
+  const knowledgeSources = await loadActiveAiKnowledge(admin);
   const analysis = await analyzeInstitutionProspect({
     institutionName: prospect.institution_name,
     institutionType: prospect.institution_type,
@@ -213,7 +217,8 @@ export async function reanalyzeProspectAction(formData: FormData) {
     programsNeeded: prospect.programs_needed,
     painPoints: prospect.pain_points,
     budgetRange: prospect.budget_range,
-    source: prospect.source
+    source: prospect.source,
+    knowledgeSources
   });
 
   const { error } = await admin

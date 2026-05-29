@@ -13,7 +13,8 @@ A custom LMS starter for Dosis de Esperanza Educa built with Next.js App Router,
 - Multi-tenant foundation with tenant-scoped users, programs, courses, and RLS
 - Institution ID login, e.g. `DOSIS-000001`, resolved automatically to the right tenant
 - Separate platform admin portal for managing LMS institutions
-- Public institutional demo request form and AI-assisted prospect pipeline for potential LMS subscribers
+- Public institutional demo request form and OpenAI-assisted prospect pipeline for potential LMS subscribers
+- Platform AI training center for editable LMS sales knowledge, qualification rules, objections, and follow-up tone
 - Admin user management and instructor creation
 - Instructor course creation with modules and lessons
 - Lesson support for video links, PDF uploads/storage paths, text, assignments, and quizzes
@@ -58,7 +59,7 @@ A custom LMS starter for Dosis de Esperanza Educa built with Next.js App Router,
    STRIPE_WEBHOOK_SECRET=whsec_...
    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
    OPENAI_API_KEY=optional
-   OPENAI_MODEL=optional
+   OPENAI_MODEL=gpt-5.2
    ```
 
    `NEXT_PUBLIC_SITE_URL` is used for Supabase email links, including password reset links. In Supabase Auth settings, add your local and production URLs to the allowed redirect URLs, for example:
@@ -133,7 +134,9 @@ Password reset starts at `/auth/forgot-password`. Institution users reset with t
 
 Platform admins create institutions from `/platform`. Each new institution gets a code, slug, and first institution admin. Institution admins manage members, courses, programs, finance clearance, and certificates inside their own dashboard.
 
-Institution subscription leads can enter through `/request-demo`. Platform admins review them from `/platform/prospects`, update status, add interaction notes, and re-run lead analysis. If `OPENAI_API_KEY` and `OPENAI_MODEL` are configured, the analysis uses OpenAI; otherwise the LMS uses a local scoring fallback so the pipeline remains usable without an AI key.
+Institution subscription leads can enter through `/request-demo`. Platform admins review them from `/platform/prospects`, update status, add interaction notes, and re-run lead analysis. If `OPENAI_API_KEY` is configured, the analysis uses OpenAI plus the active knowledge saved in `/platform/ai`; otherwise the LMS uses a local scoring fallback so the pipeline remains usable without an AI key.
+
+The AI training center in `/platform/ai` is the recommended first training layer. Add platform facts, ideal customer profiles, pricing guidance, objections, demo scripts, and follow-up tone. Those active knowledge sources are injected into each prospect analysis request so the assistant behaves more like a Dosis Educa institutional sales assistant. This is not model fine-tuning yet; it is an editable knowledge base that can be improved safely before collecting enough real examples for fine-tuning.
 
 Certificates are issued at the program level only when all required program courses are completed and the finance clearance for that student/program is marked `cleared`.
 

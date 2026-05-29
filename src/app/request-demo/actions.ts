@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
+import { loadActiveAiKnowledge } from "@/lib/ai-knowledge";
 import { analyzeInstitutionProspect } from "@/lib/prospect-ai";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
@@ -55,6 +56,8 @@ export async function requestDemoAction(formData: FormData) {
     redirect("/request-demo?error=Please complete the required fields.");
   }
 
+  const admin = createSupabaseAdminClient();
+  const knowledgeSources = await loadActiveAiKnowledge(admin);
   const analysis = await analyzeInstitutionProspect({
     institutionName: parsed.data.institutionName,
     institutionType: parsed.data.institutionType,
@@ -69,10 +72,10 @@ export async function requestDemoAction(formData: FormData) {
     programsNeeded: parsed.data.programsNeeded,
     painPoints: parsed.data.painPoints,
     budgetRange: parsed.data.budgetRange,
-    source: "request_demo"
+    source: "request_demo",
+    knowledgeSources
   });
 
-  const admin = createSupabaseAdminClient();
   const { data: prospect, error } = await admin
     .from("institution_prospects")
     .insert({
