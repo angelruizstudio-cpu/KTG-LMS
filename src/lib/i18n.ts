@@ -42,6 +42,7 @@ export const dictionary = {
       headline: "Dosis Educa",
       institutionLogin: "Institution Login",
       navAbout: "About Us",
+      requestDemo: "Request Demo",
       searchButton: "Students and Educators",
       subtitle:
         "Access your assigned courses, programs, grades, and certificates through the institution ID issued by your school."
@@ -114,6 +115,7 @@ export const dictionary = {
       headline: "Dosis Educa",
       institutionLogin: "Login institucional",
       navAbout: "Sobre Nosotros",
+      requestDemo: "Solicitar Demo",
       searchButton: "Estudiantes y Educadores",
       subtitle:
         "Accede a tus cursos asignados, programas, calificaciones y certificados usando el ID institucional emitido por tu escuela."
@@ -186,6 +188,7 @@ export const dictionary = {
       headline: "Dosis Educa",
       institutionLogin: "机构登录",
       navAbout: "关于我们",
+      requestDemo: "申请演示",
       searchButton: "学生与教育者",
       subtitle: "使用学校发放的机构 ID 访问你的课程、项目、成绩和证书。"
     },

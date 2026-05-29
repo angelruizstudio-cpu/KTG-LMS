@@ -13,6 +13,7 @@ A custom LMS starter for Dosis de Esperanza Educa built with Next.js App Router,
 - Multi-tenant foundation with tenant-scoped users, programs, courses, and RLS
 - Institution ID login, e.g. `DOSIS-000001`, resolved automatically to the right tenant
 - Separate platform admin portal for managing LMS institutions
+- Public institutional demo request form and AI-assisted prospect pipeline for potential LMS subscribers
 - Admin user management and instructor creation
 - Instructor course creation with modules and lessons
 - Lesson support for video links, PDF uploads/storage paths, text, assignments, and quizzes
@@ -56,6 +57,8 @@ A custom LMS starter for Dosis de Esperanza Educa built with Next.js App Router,
    STRIPE_SECRET_KEY=sk_test_...
    STRIPE_WEBHOOK_SECRET=whsec_...
    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
+   OPENAI_API_KEY=optional
+   OPENAI_MODEL=optional
    ```
 
    `NEXT_PUBLIC_SITE_URL` is used for Supabase email links, including password reset links. In Supabase Auth settings, add your local and production URLs to the allowed redirect URLs, for example:
@@ -129,6 +132,8 @@ Platform-level LMS administrators use `/platform/login`. Institution admins use 
 Password reset starts at `/auth/forgot-password`. Institution users reset with their institution ID, while platform administrators reset with their platform admin email. Supabase sends the recovery email and returns users through `/auth/callback?next=/auth/reset-password`.
 
 Platform admins create institutions from `/platform`. Each new institution gets a code, slug, and first institution admin. Institution admins manage members, courses, programs, finance clearance, and certificates inside their own dashboard.
+
+Institution subscription leads can enter through `/request-demo`. Platform admins review them from `/platform/prospects`, update status, add interaction notes, and re-run lead analysis. If `OPENAI_API_KEY` and `OPENAI_MODEL` are configured, the analysis uses OpenAI; otherwise the LMS uses a local scoring fallback so the pipeline remains usable without an AI key.
 
 Certificates are issued at the program level only when all required program courses are completed and the finance clearance for that student/program is marked `cleared`.
 

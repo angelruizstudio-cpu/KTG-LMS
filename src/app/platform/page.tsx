@@ -1,3 +1,4 @@
+import { Bot, Building2 } from "lucide-react";
 import Link from "next/link";
 
 import { signOutAction } from "@/app/auth/actions";
@@ -19,11 +20,12 @@ export default async function PlatformDashboardPage({
   const params = await searchParams;
   await requirePlatformAdmin();
   const supabase = createSupabaseAdminClient();
-  const [{ data: tenants }, { count: tenantCount }, { count: userCount }, { count: suspendedCount }] = await Promise.all([
+  const [{ data: tenants }, { count: tenantCount }, { count: userCount }, { count: suspendedCount }, { count: prospectCount }] = await Promise.all([
     supabase.from("tenants").select("id,name,slug,code,status,created_at").order("created_at", { ascending: false }),
     supabase.from("tenants").select("*", { count: "exact", head: true }),
     supabase.from("profiles").select("*", { count: "exact", head: true }),
-    supabase.from("tenants").select("*", { count: "exact", head: true }).eq("status", "suspended")
+    supabase.from("tenants").select("*", { count: "exact", head: true }).eq("status", "suspended"),
+    supabase.from("institution_prospects").select("*", { count: "exact", head: true })
   ]);
 
   return (
@@ -44,10 +46,19 @@ export default async function PlatformDashboardPage({
         </div>
       </header>
       <section className="mx-auto grid max-w-7xl gap-6 px-4 py-8 sm:px-6 lg:px-8">
-        <div>
-          <p className="text-sm font-bold uppercase tracking-wide text-primary-hover">Platform portal</p>
-          <h1 className="mt-2 text-3xl font-bold text-text-primary">LMS administration</h1>
-          <p className="mt-2 text-text-secondary">Manage institutions at the platform level.</p>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-sm font-bold uppercase tracking-wide text-primary-hover">Platform portal</p>
+            <h1 className="mt-2 text-3xl font-bold text-text-primary">LMS administration</h1>
+            <p className="mt-2 text-text-secondary">Manage institutions at the platform level.</p>
+          </div>
+          <Link
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-text-inverse shadow-glow hover:bg-primary-hover"
+            href="/platform/prospects"
+          >
+            <Bot size={18} />
+            Prospect pipeline
+          </Link>
         </div>
 
         {params.error ? (
@@ -59,7 +70,7 @@ export default async function PlatformDashboardPage({
           </div>
         ) : null}
 
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-4">
           <Card>
             <CardContent>
               <p className="text-sm font-semibold text-text-secondary">Institutions</p>
@@ -76,6 +87,15 @@ export default async function PlatformDashboardPage({
             <CardContent>
               <p className="text-sm font-semibold text-text-secondary">Suspended</p>
               <p className="mt-2 text-3xl font-bold text-text-primary">{suspendedCount ?? 0}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-text-secondary">Prospects</p>
+                <p className="mt-2 text-3xl font-bold text-text-primary">{prospectCount ?? 0}</p>
+              </div>
+              <Building2 className="text-secondary" size={30} />
             </CardContent>
           </Card>
         </div>

@@ -21,6 +21,9 @@ export default async function HomePage() {
             <Link className="transition hover:text-accent" href="/about">
               {t.home.navAbout}
             </Link>
+            <Link className="transition hover:text-accent" href="/request-demo">
+              {t.home.requestDemo}
+            </Link>
             <Link className="transition hover:text-accent" href="/auth/login">
               {t.home.institutionLogin}
             </Link>
@@ -63,6 +66,10 @@ export default async function HomePage() {
               >
                 <ShieldCheck size={20} />
                 {t.home.adminButton}
+              </LinkButton>
+              <LinkButton className="h-14 rounded-full text-base" href="/request-demo" size="lg" variant="primary">
+                <Sparkles size={20} />
+                {t.home.requestDemo}
               </LinkButton>
               <div className="md:hidden">
                 <LanguageSwitcher currentPath="/" language={language} variant="dark" />
