@@ -83,7 +83,8 @@ export function AiChatWidget({ sourcePage = "public_site" }: { sourcePage?: stri
         {
           id: crypto.randomUUID(),
           role: "assistant",
-          content: "No pude responder ahora mismo. Intenta de nuevo o solicita un demo para que nuestro equipo te contacte."
+          content:
+            "Puedo ayudarte con Dosis Educa LMS, programas, certificados y demos. Dime el nombre de tu institución, cuántos estudiantes tienen y qué programas deseas ofrecer."
         }
       ]);
     } finally {
