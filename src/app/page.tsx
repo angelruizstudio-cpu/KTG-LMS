@@ -1,6 +1,7 @@
 import { ShieldCheck, Sparkles } from "lucide-react";
 import Link from "next/link";
 
+import { AiChatWidget } from "@/components/ai-chat-widget";
 import { BrandLogo } from "@/components/brand-logo";
 import { InstitutionAccess, OpenInstitutionSearchButton } from "@/components/institution-access";
 import { LanguageSwitcher } from "@/components/language-switcher";
@@ -80,6 +81,7 @@ export default async function HomePage() {
           <InstitutionAccess copy={t.institutionAccess} />
         </div>
       </section>
+      <AiChatWidget sourcePage="home" />
     </main>
   );
 }

@@ -1,6 +1,7 @@
 import { ArrowLeft, Building2, CheckCircle2, Sparkles } from "lucide-react";
 import Link from "next/link";
 
+import { AiChatWidget } from "@/components/ai-chat-widget";
 import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -126,6 +127,7 @@ export default async function RequestDemoPage({
           </Card>
         </div>
       </section>
+      <AiChatWidget sourcePage="request_demo" />
     </main>
   );
 }
