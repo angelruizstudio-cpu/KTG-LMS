@@ -89,6 +89,7 @@ export async function markLessonCompleteAction(formData: FormData) {
   }
 
   revalidatePath(`/dashboard/student/courses/${courseId}`);
+  revalidatePath(`/dashboard/student/courses/${courseId}/lessons/${lessonId}`);
   revalidatePath("/dashboard/student/certificates");
 }
 

@@ -37,7 +37,9 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
-  if (isAuthRoute && user && !request.nextUrl.pathname.startsWith("/auth/callback")) {
+  const isPasswordRecoveryRoute = request.nextUrl.pathname.startsWith("/auth/reset-password");
+
+  if (isAuthRoute && user && !request.nextUrl.pathname.startsWith("/auth/callback") && !isPasswordRecoveryRoute) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/dashboard";
     return NextResponse.redirect(redirectUrl);

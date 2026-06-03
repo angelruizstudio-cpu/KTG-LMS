@@ -8,13 +8,16 @@ import { Input } from "@/components/ui/input";
 import { getDictionary } from "@/lib/i18n";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
+import { RecoverySessionHandler } from "./recovery-session-handler";
+
 export default async function ResetPasswordPage({
   searchParams
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ accountType?: string; error?: string }>;
 }) {
   const params = await searchParams;
   const { language, t } = await getDictionary();
+  const requestNewLinkHref = params.accountType === "platform" ? "/platform/forgot-password" : "/auth/forgot-password";
   const supabase = await createSupabaseServerClient();
   const {
     data: { user }
@@ -22,6 +25,7 @@ export default async function ResetPasswordPage({
 
   return (
     <main className="grid min-h-screen place-items-center bg-background px-4 py-10">
+      <RecoverySessionHandler />
       <div className="premium-panel w-full max-w-md rounded-3xl border border-border p-8 shadow-soft">
         <Link className="mb-8 flex items-center gap-3 font-semibold text-text-primary" href="/">
           <BrandLogo />
@@ -63,7 +67,7 @@ export default async function ResetPasswordPage({
         )}
 
         <p className="mt-6 text-center text-sm">
-          <Link className="font-semibold text-primary-hover" href="/auth/forgot-password?accountType=institution">
+          <Link className="font-semibold text-primary-hover" href={requestNewLinkHref}>
             {t.auth.requestNewLink}
           </Link>
         </p>

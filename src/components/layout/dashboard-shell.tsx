@@ -1,34 +1,36 @@
-import { BookOpen, CreditCard, LayoutDashboard, LogOut, Settings, Trophy, UsersRound } from "lucide-react";
+import { LogOut } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { signOutAction } from "@/app/auth/actions";
 import { BrandLogo } from "@/components/brand-logo";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { DashboardNavLinks } from "@/components/layout/dashboard-nav-links";
+import type { DashboardNavItem } from "@/components/layout/dashboard-nav-links";
 import { TenantSwitcher } from "@/components/layout/tenant-switcher";
 import { Button } from "@/components/ui/button";
 import { getDictionary } from "@/lib/i18n";
-import { cn, initials } from "@/lib/utils";
+import { initials } from "@/lib/utils";
 import type { UserRole } from "@/types/database";
 
-const navByRole: Record<UserRole, Array<{ href: string; labelKey: string; icon: typeof LayoutDashboard }>> = {
+const navByRole: Record<UserRole, Array<{ href: string; labelKey: string; iconKey: DashboardNavItem["iconKey"] }>> = {
   admin: [
-    { href: "/dashboard/admin", labelKey: "adminOverview", icon: LayoutDashboard },
-    { href: "/dashboard/admin/users", labelKey: "users", icon: UsersRound },
-    { href: "/dashboard/admin/programs", labelKey: "programs", icon: BookOpen },
-    { href: "/dashboard/admin/courses", labelKey: "courses", icon: BookOpen },
-    { href: "/dashboard/admin/finance", labelKey: "finance", icon: CreditCard },
-    { href: "/dashboard/admin/settings", labelKey: "settings", icon: Settings }
+    { href: "/dashboard/admin", labelKey: "adminOverview", iconKey: "dashboard" },
+    { href: "/dashboard/admin/users", labelKey: "users", iconKey: "users" },
+    { href: "/dashboard/admin/programs", labelKey: "programs", iconKey: "book" },
+    { href: "/dashboard/admin/courses", labelKey: "courses", iconKey: "book" },
+    { href: "/dashboard/admin/finance", labelKey: "finance", iconKey: "creditCard" },
+    { href: "/dashboard/admin/settings", labelKey: "settings", iconKey: "settings" }
   ],
   instructor: [
-    { href: "/dashboard/instructor", labelKey: "instructorOverview", icon: LayoutDashboard },
-    { href: "/dashboard/instructor/courses", labelKey: "courses", icon: BookOpen },
-    { href: "/dashboard/instructor/gradebook", labelKey: "gradebook", icon: Trophy }
+    { href: "/dashboard/instructor", labelKey: "instructorOverview", iconKey: "dashboard" },
+    { href: "/dashboard/instructor/courses", labelKey: "courses", iconKey: "book" },
+    { href: "/dashboard/instructor/gradebook", labelKey: "gradebook", iconKey: "trophy" }
   ],
   student: [
-    { href: "/dashboard/student", labelKey: "myLearning", icon: LayoutDashboard },
-    { href: "/dashboard/student/catalog", labelKey: "programCourses", icon: BookOpen },
-    { href: "/dashboard/student/certificates", labelKey: "certificates", icon: Trophy }
+    { href: "/dashboard/student", labelKey: "myLearning", iconKey: "dashboard" },
+    { href: "/dashboard/student/catalog", labelKey: "programCourses", iconKey: "book" },
+    { href: "/dashboard/student/certificates", labelKey: "certificates", iconKey: "trophy" }
   ]
 };
 
@@ -65,6 +67,11 @@ export async function DashboardShell({
 }) {
   const nav = navByRole[profile.role];
   const { language, t } = await getDictionary();
+  const navItems = nav.map((item) => ({
+    href: item.href,
+    iconKey: item.iconKey,
+    label: navLabel(item.labelKey, t)
+  }));
 
   return (
     <div className="min-h-screen bg-background print:bg-surface">
@@ -75,20 +82,7 @@ export async function DashboardShell({
         <div className="border-b border-white/10 p-4">
           <TenantSwitcher activeTenantId={profile.default_tenant_id} memberships={memberships} />
         </div>
-        <nav className="grid gap-1 p-4">
-          {nav.map((item) => (
-            <Link
-              key={item.href}
-              className={cn(
-                "flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-text-inverse opacity-80 transition hover:bg-sidebar-hover hover:text-text-inverse hover:opacity-100"
-              )}
-              href={item.href as never}
-            >
-              <item.icon size={18} />
-              {navLabel(item.labelKey, t)}
-            </Link>
-          ))}
-        </nav>
+        <DashboardNavLinks items={navItems} />
       </aside>
       <div className="print:pl-0 lg:pl-72">
         <header className="sticky top-0 z-10 border-b border-border bg-surface/90 backdrop-blur print:hidden">
@@ -113,8 +107,9 @@ export async function DashboardShell({
             </div>
           </div>
         </header>
-        <main className="px-4 py-8 print:p-0 sm:px-6 lg:px-8">{children}</main>
+        <main className="px-4 pb-28 pt-8 print:p-0 sm:px-6 lg:px-8 lg:pb-8">{children}</main>
       </div>
+      <DashboardNavLinks items={navItems} variant="bottom" />
     </div>
   );
 }

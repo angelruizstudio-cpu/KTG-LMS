@@ -4,18 +4,20 @@ import { cn } from "@/lib/utils";
 
 export function BrandLogo({
   className,
+  markClassName,
   imageClassName,
   showText = true,
   inverse = false
 }: {
   className?: string;
+  markClassName?: string;
   imageClassName?: string;
   showText?: boolean;
   inverse?: boolean;
 }) {
   return (
     <span className={cn("flex items-center gap-3", className)}>
-      <span className="grid size-11 place-items-center overflow-hidden rounded-2xl bg-surface shadow-glow">
+      <span className={cn("grid size-11 place-items-center overflow-hidden rounded-2xl bg-surface shadow-glow", markClassName)}>
         <Image
           alt="Dosis de Esperanza Educa"
           className={cn("h-10 w-10 object-contain", imageClassName)}

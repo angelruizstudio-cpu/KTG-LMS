@@ -112,24 +112,37 @@ export default async function StudentCoursePage({
                           <FileText className="mt-1 text-secondary" size={20} />
                         )}
                         <div>
-                          <h3 className="font-semibold text-text-primary">{lesson.title}</h3>
+                          <Link
+                            className="font-semibold text-text-primary transition hover:text-primary-hover"
+                            href={`/dashboard/student/courses/${course.id}/lessons/${lesson.id}`}
+                          >
+                            {lesson.title}
+                          </Link>
                           <p className="mt-1 text-xs capitalize text-text-secondary">{lesson.lesson_type}</p>
                         </div>
                       </div>
-                      <form action={markLessonCompleteAction}>
-                        <input name="courseId" type="hidden" value={course.id} />
-                        <input name="lessonId" type="hidden" value={lesson.id} />
-                        <Button disabled={completedIds.has(lesson.id)} size="sm" type="submit" variant="secondary">
-                          {completedIds.has(lesson.id) ? (
-                            <>
-                              <CheckCircle2 size={16} />
-                              Complete
-                            </>
-                          ) : (
-                            "Mark complete"
-                          )}
-                        </Button>
-                      </form>
+                      <div className="flex flex-wrap gap-2">
+                        <Link
+                          className="inline-flex h-9 items-center justify-center rounded-xl bg-primary px-3 text-sm font-semibold text-text-inverse shadow-glow transition hover:bg-primary-hover"
+                          href={`/dashboard/student/courses/${course.id}/lessons/${lesson.id}`}
+                        >
+                          Open lesson
+                        </Link>
+                        <form action={markLessonCompleteAction}>
+                          <input name="courseId" type="hidden" value={course.id} />
+                          <input name="lessonId" type="hidden" value={lesson.id} />
+                          <Button disabled={completedIds.has(lesson.id)} size="sm" type="submit" variant="secondary">
+                            {completedIds.has(lesson.id) ? (
+                              <>
+                                <CheckCircle2 size={16} />
+                                Complete
+                              </>
+                            ) : (
+                              "Mark complete"
+                            )}
+                          </Button>
+                        </form>
+                      </div>
                     </div>
                     {lesson.video_url ? (
                       <a className="mt-4 block text-sm font-semibold text-primary-hover" href={lesson.video_url} rel="noreferrer" target="_blank">

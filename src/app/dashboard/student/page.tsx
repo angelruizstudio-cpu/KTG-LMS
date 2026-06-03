@@ -302,7 +302,7 @@ export default async function StudentDashboardPage() {
                   <Link
                     key={lesson.id}
                     className="rounded-xl border border-border bg-background p-3 transition hover:border-primary hover:bg-primary-light/40"
-                    href={`/dashboard/student/courses/${enrollment.course_id}`}
+                    href={`/dashboard/student/courses/${enrollment.course_id}/lessons/${lesson.id}`}
                   >
                     <p className="text-sm font-semibold text-text-primary">{lesson.title}</p>
                     <p className="mt-1 text-xs text-text-secondary">{enrollment.courses?.title}</p>

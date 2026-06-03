@@ -41,7 +41,7 @@ export default async function PlatformLoginPage({
           </Button>
         </form>
         <p className="mt-5 text-center text-sm">
-          <Link className="font-semibold text-primary-hover" href="/auth/forgot-password?accountType=platform">
+          <Link className="font-semibold text-primary-hover" href="/platform/forgot-password">
             {t.common.forgotPassword}
           </Link>
         </p>

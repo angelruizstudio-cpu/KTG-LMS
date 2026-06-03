@@ -39,12 +39,32 @@ const updatePasswordSchema = z
   });
 
 function siteUrl() {
-  return process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3001";
+  return (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3001").replace(/\/+$/, "");
 }
 
 function forgotPasswordPath(accountType: "institution" | "platform", params: Record<string, string | number> = {}) {
-  const query = new URLSearchParams({ accountType, ...Object.fromEntries(Object.entries(params).map(([key, value]) => [key, String(value)])) });
-  return `/auth/forgot-password?${query.toString()}`;
+  const query = new URLSearchParams(Object.fromEntries(Object.entries(params).map(([key, value]) => [key, String(value)])));
+  const path = accountType === "platform" ? "/platform/forgot-password" : "/auth/forgot-password";
+  const suffix = query.toString();
+  return suffix ? `${path}?${suffix}` : path;
+}
+
+function passwordResetFailureMessage(message?: string) {
+  const normalizedMessage = message?.toLowerCase() ?? "";
+
+  if (normalizedMessage.includes("rate limit") || normalizedMessage.includes("too many")) {
+    return "Se alcanzó el límite de correos de recuperación. Espera unos minutos y vuelve a intentarlo.";
+  }
+
+  if (normalizedMessage.includes("redirect") || normalizedMessage.includes("not allowed")) {
+    return "El enlace de recuperación no está permitido en Supabase. Verifica los Redirect URLs de Authentication.";
+  }
+
+  if (normalizedMessage.includes("smtp") || normalizedMessage.includes("email")) {
+    return "No pudimos enviar el correo de recuperación. Verifica la configuración de emails en Supabase Auth.";
+  }
+
+  return "No pudimos enviar el correo de recuperación ahora mismo. Intenta de nuevo o contacta soporte.";
 }
 
 export async function loginAction(formData: FormData) {
@@ -139,7 +159,7 @@ export async function requestPasswordResetAction(formData: FormData) {
   );
 
   if (!parsed.success) {
-    redirect(forgotPasswordPath(accountTypeForRedirect, { error: "Enter a valid institution ID or platform email." }));
+    redirect(forgotPasswordPath(accountTypeForRedirect, { error: "Ingresa un ID institucional o correo de plataforma válido." }));
   }
 
   let email: string | null = null;
@@ -148,7 +168,7 @@ export async function requestPasswordResetAction(formData: FormData) {
   if (!admin) {
     redirect(
       forgotPasswordPath(parsed.data.accountType, {
-        error: "Password reset is temporarily unavailable. Contact support."
+        error: "La recuperación de contraseña no está disponible temporalmente. Contacta soporte."
       })
     );
   }
@@ -183,7 +203,7 @@ export async function requestPasswordResetAction(formData: FormData) {
     console.error("Password reset lookup failed", error);
     redirect(
       forgotPasswordPath(parsed.data.accountType, {
-        error: "Password reset is temporarily unavailable. Contact support."
+        error: "La recuperación de contraseña no está disponible temporalmente. Contacta soporte."
       })
     );
   }
@@ -191,25 +211,36 @@ export async function requestPasswordResetAction(formData: FormData) {
   if (email) {
     const supabase = await createSupabaseServerClient();
     let resetEmailFailed = false;
+    let resetEmailFailureMessage: string | undefined;
+    const resetPath = parsed.data.accountType === "platform" ? "/auth/reset-password?accountType=platform" : "/auth/reset-password";
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${siteUrl()}/auth/callback?next=/auth/reset-password`
+        redirectTo: `${siteUrl()}/auth/callback?next=${encodeURIComponent(resetPath)}`
       });
 
       if (error) {
-        console.error("Password reset email failed", error);
+        console.error("Password reset email failed", {
+          accountType: parsed.data.accountType,
+          email,
+          redirectTo: `${siteUrl()}/auth/callback?next=${encodeURIComponent(resetPath)}`,
+          message: error.message,
+          name: error.name,
+          status: error.status
+        });
+        resetEmailFailureMessage = error.message;
         resetEmailFailed = true;
       }
     } catch (error) {
       console.error("Password reset email failed", error);
+      resetEmailFailureMessage = error instanceof Error ? error.message : undefined;
       resetEmailFailed = true;
     }
 
     if (resetEmailFailed) {
       redirect(
         forgotPasswordPath(parsed.data.accountType, {
-          error: "Password reset email could not be sent. Check Supabase Auth email settings."
+          error: passwordResetFailureMessage(resetEmailFailureMessage)
         })
       );
     }

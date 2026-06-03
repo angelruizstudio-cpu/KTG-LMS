@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getDictionary } from "@/lib/i18n";
 
-export default async function ForgotPasswordPage({
+export default async function PlatformForgotPasswordPage({
   searchParams
 }: {
   searchParams: Promise<{ error?: string; sent?: string }>;
@@ -22,12 +22,12 @@ export default async function ForgotPasswordPage({
           <BrandLogo />
         </Link>
         <div className="mb-6 flex justify-end">
-          <LanguageSwitcher currentPath="/auth/forgot-password" language={language} />
+          <LanguageSwitcher currentPath="/platform/forgot-password" language={language} />
         </div>
 
         <div>
           <h1 className="text-2xl font-bold text-text-primary">{t.auth.resetPassword}</h1>
-          <p className="mt-2 text-sm text-text-secondary">{t.auth.forgotDescription}</p>
+          <p className="mt-2 text-sm text-text-secondary">{t.auth.platformAdminsDescription}</p>
         </div>
 
         {params.error ? (
@@ -42,27 +42,22 @@ export default async function ForgotPasswordPage({
         ) : null}
 
         <form action={requestPasswordResetAction} className="mt-6 grid gap-4 rounded-2xl border border-border bg-surface p-5">
-          <input name="accountType" type="hidden" value="institution" />
+          <input name="accountType" type="hidden" value="platform" />
           <div>
-            <h2 className="font-semibold text-text-primary">{t.auth.institutionUsers}</h2>
-            <p className="mt-1 text-sm text-text-secondary">{t.auth.institutionUsersDescription}</p>
+            <h2 className="font-semibold text-text-primary">{t.auth.platformAdmins}</h2>
+            <p className="mt-1 text-sm text-text-secondary">{t.auth.platformDescription}</p>
           </div>
-          <Input
-            autoCapitalize="characters"
-            autoComplete="username"
-            label={t.auth.institutionId}
-            name="institutionUserId"
-            placeholder="DOSIS-000001"
-            required
-          />
-          <Button type="submit">{t.auth.sendResetLink}</Button>
+          <Input label={t.auth.email} name="email" type="email" autoComplete="email" placeholder="admin@example.com" required />
+          <Button type="submit" variant="secondary">
+            {t.auth.sendResetLink}
+          </Button>
         </form>
 
-        <div className="mt-6 flex flex-wrap justify-center gap-4 text-sm">
-          <Link className="font-semibold text-primary-hover" href="/auth/login">
-            {t.common.backToInstitutionLogin}
+        <p className="mt-6 text-center text-sm">
+          <Link className="font-semibold text-primary-hover" href="/platform/login">
+            {t.common.backToPlatformLogin}
           </Link>
-        </div>
+        </p>
       </div>
     </main>
   );

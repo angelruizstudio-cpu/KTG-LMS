@@ -112,9 +112,7 @@ export function InstitutionAccess({ copy }: { copy: InstitutionAccessCopy }) {
               {institutions.map((institution) => (
                 <Link
                   className="group flex items-center justify-between rounded-xl bg-surface px-5 py-4 text-base font-bold text-secondary-hover shadow-soft transition hover:bg-secondary-light hover:text-text-primary"
-                  href={`/auth/login?institution=${encodeURIComponent(institution.slug)}&institutionName=${encodeURIComponent(
-                    institution.name
-                  )}`}
+                  href={`/institutions/${encodeURIComponent(institution.slug)}`}
                   key={institution.slug}
                 >
                   <span>{institution.name}</span>
@@ -163,10 +161,13 @@ export function InstitutionAccess({ copy }: { copy: InstitutionAccessCopy }) {
   );
 }
 
-export function OpenInstitutionSearchButton({ label = "Students and Educators" }: { label?: string }) {
+export function OpenInstitutionSearchButton({ className, label = "Students and Educators" }: { className?: string; label?: string }) {
   return (
     <button
-      className="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-primary px-6 text-base font-semibold text-text-inverse shadow-glow transition hover:bg-primary-hover"
+      className={
+        className ??
+        "inline-flex h-14 items-center justify-center gap-2 rounded-full bg-primary px-6 text-base font-semibold text-text-inverse shadow-glow transition hover:bg-primary-hover"
+      }
       onClick={() => window.dispatchEvent(new Event("openInstitutionSearch"))}
       type="button"
     >

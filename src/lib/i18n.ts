@@ -41,11 +41,20 @@ export const dictionary = {
       badge: "Institution-managed learning portal",
       headline: "Dosis Educa",
       institutionLogin: "Institution Login",
+      learnerCardTitle: "Assigned learning paths",
+      learnerCardText: "Students access the exact programs and courses their institution makes available.",
       navAbout: "About Us",
+      proofCourses: "Program-based courses",
+      proofFinance: "Finance clearance",
+      proofTenant: "Institution portals",
       requestDemo: "Request Demo",
       searchButton: "Students and Educators",
+      sectionEyebrow: "Built for institution-led learning",
+      sectionTitle: "One LMS for programs, courses, progress, and certificates.",
+      sectionText:
+        "Dosis Educa helps institutions assign learning paths, manage prerequisites, support instructors, and verify completion before certificates are issued.",
       subtitle:
-        "Access your assigned courses, programs, grades, and certificates through the institution ID issued by your school."
+        "Access assigned courses, programs, grades, and certificates through your institution portal, or bring your institution online with a guided LMS demo."
     },
     institutionAccess: {
       empty: "No matching institutions found.",
@@ -114,11 +123,20 @@ export const dictionary = {
       badge: "Portal académico administrado por institución",
       headline: "Dosis Educa",
       institutionLogin: "Login institucional",
+      learnerCardTitle: "Rutas académicas asignadas",
+      learnerCardText: "Los estudiantes acceden a los programas y cursos que su institución habilita.",
       navAbout: "Sobre Nosotros",
+      proofCourses: "Cursos por programa",
+      proofFinance: "Validación de finanzas",
+      proofTenant: "Portales institucionales",
       requestDemo: "Solicitar Demo",
       searchButton: "Estudiantes y Educadores",
+      sectionEyebrow: "Diseñado para aprendizaje institucional",
+      sectionTitle: "Un LMS para programas, cursos, progreso y certificados.",
+      sectionText:
+        "Dosis Educa ayuda a las instituciones a asignar rutas académicas, manejar prerrequisitos, apoyar instructores y verificar la culminación antes de emitir certificados.",
       subtitle:
-        "Accede a tus cursos asignados, programas, calificaciones y certificados usando el ID institucional emitido por tu escuela."
+        "Accede a cursos, programas, calificaciones y certificados desde el portal de tu institución, o lleva tu institución en línea con un demo guiado del LMS."
     },
     institutionAccess: {
       empty: "No encontramos instituciones con ese nombre.",
@@ -187,10 +205,18 @@ export const dictionary = {
       badge: "由机构管理的学习门户",
       headline: "Dosis Educa",
       institutionLogin: "机构登录",
+      learnerCardTitle: "指定学习路径",
+      learnerCardText: "学生访问机构开放的项目和课程。",
       navAbout: "关于我们",
+      proofCourses: "项目课程",
+      proofFinance: "财务审核",
+      proofTenant: "机构门户",
       requestDemo: "申请演示",
       searchButton: "学生与教育者",
-      subtitle: "使用学校发放的机构 ID 访问你的课程、项目、成绩和证书。"
+      sectionEyebrow: "为机构学习而建",
+      sectionTitle: "一个 LMS 管理项目、课程、进度和证书。",
+      sectionText: "Dosis Educa 帮助机构分配学习路径、管理先修要求、支持教师，并在颁发证书前验证完成情况。",
+      subtitle: "通过你的机构门户访问课程、项目、成绩和证书，或为你的机构预约 LMS 演示。"
     },
     institutionAccess: {
       empty: "没有找到匹配的机构。",

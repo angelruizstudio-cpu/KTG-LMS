@@ -141,7 +141,7 @@ export default async function PlatformDashboardPage({
                 <tr>
                   <th className="px-5 py-3">Institution</th>
                   <th className="px-5 py-3">Code</th>
-                  <th className="px-5 py-3">Slug</th>
+                  <th className="px-5 py-3">Institution URL</th>
                   <th className="px-5 py-3">Status</th>
                   <th className="px-5 py-3 text-right">Action</th>
                 </tr>
@@ -151,7 +151,11 @@ export default async function PlatformDashboardPage({
                   <tr key={tenant.id}>
                     <td className="px-5 py-4 font-semibold text-text-primary">{tenant.name}</td>
                     <td className="px-5 py-4 text-text-secondary">{tenant.code}</td>
-                    <td className="px-5 py-4 text-text-secondary">{tenant.slug}</td>
+                    <td className="px-5 py-4">
+                      <Link className="font-semibold text-secondary-hover hover:text-primary-hover" href={`/institutions/${tenant.slug}`}>
+                        /institutions/{tenant.slug}
+                      </Link>
+                    </td>
                     <td className="px-5 py-4">
                       <Badge tone={tenant.status === "active" ? "green" : "amber"}>{tenant.status}</Badge>
                     </td>
