@@ -101,7 +101,7 @@ export async function submitQuizAction(formData: FormData) {
   const { data: quiz } = await supabase.from("quizzes").select("*").eq("id", quizId).single();
   const { data: questions } = await supabase.from("quiz_questions").select("*").eq("quiz_id", quizId);
 
-  if (!quiz || !questions) {
+  if (!quiz || !questions || questions.length === 0) {
     redirect(`/dashboard/student/courses/${courseId}?error=Quiz not found.`);
   }
 
