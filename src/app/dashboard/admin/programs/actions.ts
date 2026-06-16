@@ -141,7 +141,7 @@ export async function assignStudentToProgramAction(formData: FormData) {
     redirect(`/dashboard/admin/programs?error=${encodeURIComponent(error.message)}`);
   }
 
-  await supabase.from("finance_clearances").upsert(
+  const { error: financeError } = await supabase.from("finance_clearances").upsert(
     {
       program_id: parsed.data.programId,
       student_id: parsed.data.studentId,
@@ -150,6 +150,10 @@ export async function assignStudentToProgramAction(formData: FormData) {
     },
     { onConflict: "program_id,student_id" }
   );
+
+  if (financeError) {
+    redirect(`/dashboard/admin/programs?error=${encodeURIComponent(financeError.message)}`);
+  }
 
   revalidatePath("/dashboard/admin/programs");
 }

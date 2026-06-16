@@ -29,7 +29,7 @@ export async function POST(request: Request) {
 
     if (courseId && studentId) {
       const supabase = createSupabaseAdminClient();
-      await supabase.from("enrollments").upsert(
+      const { error } = await supabase.from("enrollments").upsert(
         {
           course_id: courseId,
           student_id: studentId,
@@ -37,6 +37,11 @@ export async function POST(request: Request) {
         },
         { onConflict: "course_id,student_id" }
       );
+
+      if (error) {
+        console.error("Stripe webhook: failed to upsert enrollment", error);
+        return NextResponse.json({ error: "Enrollment failed" }, { status: 500 });
+      }
     }
   }
 
