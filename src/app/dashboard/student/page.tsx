@@ -8,6 +8,7 @@ import { LinkButton } from "@/components/ui/link-button";
 import { requireProfile } from "@/lib/auth";
 import { getDictionary } from "@/lib/i18n";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { formatDueDate, isOverdue } from "@/lib/utils";
 
 type EnrollmentWithCourse = {
   id: string;
@@ -45,6 +46,7 @@ type LessonRow = {
   module_id: string;
   title: string;
   lesson_type: string;
+  due_at: string | null;
   position: number;
 };
 
@@ -121,7 +123,7 @@ export default async function StudentDashboardPage() {
   const moduleIds = moduleRows.map((module) => module.id);
   const [{ data: lessons }, { data: lessonProgress }] = await Promise.all([
     moduleIds.length
-      ? supabase.from("lessons").select("id,module_id,title,lesson_type,position").in("module_id", moduleIds).order("position")
+      ? supabase.from("lessons").select("id,module_id,title,lesson_type,due_at,position").in("module_id", moduleIds).order("position")
       : Promise.resolve({ data: [] as LessonRow[] }),
     moduleIds.length
       ? supabase.from("lesson_progress").select("lesson_id,completed").eq("student_id", profile.id)
@@ -153,6 +155,13 @@ export default async function StudentDashboardPage() {
   const toDoItems = activeEnrollments
     .map((enrollment) => ({ enrollment, lesson: nextLessonsByCourse.get(enrollment.course_id) }))
     .filter((item): item is { enrollment: EnrollmentWithCourse; lesson: LessonRow } => Boolean(item.lesson))
+    // Soonest due date first; lessons with no due date sort after every dated one.
+    .sort((a, b) => {
+      if (!a.lesson.due_at && !b.lesson.due_at) return 0;
+      if (!a.lesson.due_at) return 1;
+      if (!b.lesson.due_at) return -1;
+      return Date.parse(a.lesson.due_at) - Date.parse(b.lesson.due_at);
+    })
     .slice(0, 5);
   const recentFeedback = [
     ...(((gradebookEntries ?? []) as GradebookEntry[]).map((entry) => ({
@@ -310,9 +319,16 @@ export default async function StudentDashboardPage() {
                   >
                     <p className="text-sm font-semibold text-text-primary">{lesson.title}</p>
                     <p className="mt-1 text-xs text-text-secondary">{enrollment.courses?.title}</p>
-                    <Badge className="mt-3" tone={lesson.lesson_type === "quiz" ? "pink" : lesson.lesson_type === "assignment" ? "amber" : "blue"}>
-                      {lesson.lesson_type}
-                    </Badge>
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <Badge tone={lesson.lesson_type === "quiz" ? "pink" : lesson.lesson_type === "assignment" ? "amber" : "blue"}>
+                        {lesson.lesson_type}
+                      </Badge>
+                      {lesson.due_at ? (
+                        <span className={`text-xs font-semibold ${isOverdue(lesson.due_at, false) ? "text-error" : "text-text-secondary"}`}>
+                          {isOverdue(lesson.due_at, false) ? "Overdue" : formatDueDate(lesson.due_at)}
+                        </span>
+                      ) : null}
+                    </div>
                   </Link>
                 ))
               ) : (

@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, CheckCircle2, ChevronLeft, FileText, PlayCircle, UploadCloud } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, ChevronLeft, Clock, FileText, PlayCircle, UploadCloud } from "lucide-react";
 import Link from "next/link";
 
 import { markLessonCompleteAction } from "@/app/dashboard/student/actions";
@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { requireProfile } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { formatDueDate, isOverdue } from "@/lib/utils";
 import type { Database } from "@/types/database";
 
 type LessonRow = Database["public"]["Tables"]["lessons"]["Row"];
@@ -117,6 +118,17 @@ export default async function StudentLessonPage({
               <div className="flex flex-wrap items-center gap-3">
                 <Badge tone={completed ? "green" : "blue"}>{completed ? "Complete" : "In progress"}</Badge>
                 <Badge>{lesson.lesson_type}</Badge>
+                {lesson.due_at ? (
+                  <span
+                    className={`inline-flex items-center gap-1 text-sm font-semibold ${
+                      isOverdue(lesson.due_at, completed) ? "text-error" : "text-text-secondary"
+                    }`}
+                  >
+                    <Clock size={14} />
+                    {isOverdue(lesson.due_at, completed) ? "Overdue — " : "Due "}
+                    {formatDueDate(lesson.due_at)}
+                  </span>
+                ) : null}
               </div>
               <div className="mt-5 flex gap-4">
                 <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-secondary-light text-secondary-hover">

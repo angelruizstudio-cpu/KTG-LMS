@@ -59,6 +59,15 @@ export function safeNextPath(value: string | undefined | null, fallback = "/dash
   return value;
 }
 
+export function formatDueDate(dueAt: string) {
+  return new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short" }).format(new Date(dueAt));
+}
+
+/** Whether a due date has passed. Returns false for completed items or lessons with no due date. */
+export function isOverdue(dueAt: string | null, completed: boolean) {
+  return Boolean(dueAt) && !completed && new Date(dueAt as string).getTime() < Date.now();
+}
+
 export function initials(name: string) {
   return name
     .split(" ")
