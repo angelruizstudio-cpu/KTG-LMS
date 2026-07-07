@@ -63,6 +63,17 @@ const gradeAssignmentSchema = z.object({
   returnTo: z.enum(["course", "gradebook"]).default("course")
 });
 
+const announcementSchema = z.object({
+  courseId: z.string().uuid(),
+  title: z.string().min(2),
+  body: z.string().min(2)
+});
+
+const deleteAnnouncementSchema = z.object({
+  courseId: z.string().uuid(),
+  announcementId: z.string().uuid()
+});
+
 export async function createCourseAction(formData: FormData) {
   const { profile } = await requireProfile(["instructor", "admin"]);
   const parsed = courseSchema.safeParse({
@@ -339,4 +350,54 @@ export async function gradeAssignmentSubmissionAction(formData: FormData) {
   if (parsed.data.returnTo === "gradebook") {
     redirect("/dashboard/instructor/gradebook");
   }
+}
+
+export async function createAnnouncementAction(formData: FormData) {
+  const { profile } = await requireProfile(["instructor", "admin"]);
+  const parsed = announcementSchema.safeParse({
+    courseId: formData.get("courseId"),
+    title: formData.get("title"),
+    body: formData.get("body")
+  });
+
+  if (!parsed.success) {
+    redirect(`/dashboard/instructor/courses/${String(formData.get("courseId"))}?error=Announcement details are invalid.`);
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.from("course_announcements").insert({
+    course_id: parsed.data.courseId,
+    title: parsed.data.title,
+    body: parsed.data.body,
+    created_by: profile.id
+  });
+
+  if (error) {
+    redirect(`/dashboard/instructor/courses/${parsed.data.courseId}?error=${encodeURIComponent(error.message)}`);
+  }
+
+  revalidatePath(`/dashboard/instructor/courses/${parsed.data.courseId}`);
+  revalidatePath(`/dashboard/student/courses/${parsed.data.courseId}`);
+}
+
+export async function deleteAnnouncementAction(formData: FormData) {
+  await requireProfile(["instructor", "admin"]);
+  const parsed = deleteAnnouncementSchema.safeParse({
+    courseId: formData.get("courseId"),
+    announcementId: formData.get("announcementId")
+  });
+
+  if (!parsed.success) {
+    redirect(`/dashboard/instructor/courses/${String(formData.get("courseId"))}?error=Unable to delete announcement.`);
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.from("course_announcements").delete().eq("id", parsed.data.announcementId);
+
+  if (error) {
+    redirect(`/dashboard/instructor/courses/${parsed.data.courseId}?error=${encodeURIComponent(error.message)}`);
+  }
+
+  revalidatePath(`/dashboard/instructor/courses/${parsed.data.courseId}`);
+  revalidatePath(`/dashboard/student/courses/${parsed.data.courseId}`);
 }

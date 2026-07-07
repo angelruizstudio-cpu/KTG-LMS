@@ -190,6 +190,17 @@ create table public.program_certificates (
   unique (program_id, student_id)
 );
 
+create table public.course_announcements (
+  id uuid primary key default gen_random_uuid(),
+  course_id uuid not null references public.courses(id) on delete cascade,
+  title text not null,
+  body text not null,
+  created_by uuid not null references public.profiles(id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+
+create index course_announcements_course_id_idx on public.course_announcements(course_id);
+
 create or replace function public.set_updated_at()
 returns trigger
 language plpgsql
@@ -284,6 +295,7 @@ alter table public.gradebook_entries enable row level security;
 alter table public.certificates enable row level security;
 alter table public.finance_clearances enable row level security;
 alter table public.program_certificates enable row level security;
+alter table public.course_announcements enable row level security;
 
 create policy "Profiles are viewable by self, instructors, and admins"
 on public.profiles for select
@@ -1020,6 +1032,50 @@ using (
     where course_modules.id = lessons.module_id
       and courses.tenant_id = public.current_tenant_id()
       and (courses.status = 'published' or courses.created_by = auth.uid() or public.current_role() in ('admin', 'instructor'))
+  )
+);
+
+-- Visible to the course's instructor/admin, or a student enrolled in that course.
+create policy "Tenant announcements visible to course members"
+on public.course_announcements for select
+using (
+  exists (
+    select 1
+    from public.courses
+    where courses.id = course_announcements.course_id
+      and courses.tenant_id = public.current_tenant_id()
+      and (
+        public.is_instructor_for_course(course_announcements.course_id)
+        or public.is_admin()
+        or exists (
+          select 1
+          from public.enrollments
+          where enrollments.course_id = course_announcements.course_id
+            and enrollments.student_id = auth.uid()
+        )
+      )
+  )
+);
+
+-- Only the course's instructor/admin may write announcements.
+create policy "Tenant instructors manage announcements"
+on public.course_announcements for all
+using (
+  exists (
+    select 1
+    from public.courses
+    where courses.id = course_announcements.course_id
+      and courses.tenant_id = public.current_tenant_id()
+      and public.is_instructor_for_course(course_announcements.course_id)
+  )
+)
+with check (
+  exists (
+    select 1
+    from public.courses
+    where courses.id = course_announcements.course_id
+      and courses.tenant_id = public.current_tenant_id()
+      and public.is_instructor_for_course(course_announcements.course_id)
   )
 );
 

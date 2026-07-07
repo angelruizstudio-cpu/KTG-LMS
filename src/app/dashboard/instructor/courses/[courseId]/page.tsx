@@ -1,10 +1,12 @@
-import { FileQuestion, FileText, PlayCircle, UploadCloud, UsersRound } from "lucide-react";
+import { Megaphone, FileQuestion, FileText, PlayCircle, Trash2, UploadCloud, UsersRound } from "lucide-react";
 
 import {
+  createAnnouncementAction,
   createLessonAction,
   createModuleAction,
   createQuizAction,
   createQuizQuestionAction,
+  deleteAnnouncementAction,
   gradeAssignmentSubmissionAction,
   publishCourseAction
 } from "@/app/dashboard/instructor/actions";
@@ -12,9 +14,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { ConfirmSubmitButton, SubmitButton } from "@/components/ui/submit-button";
 import { Textarea } from "@/components/ui/textarea";
 import { requireProfile } from "@/lib/auth";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
+import { formatDateTime } from "@/lib/utils";
 import type { Database } from "@/types/database";
 
 type ModuleRow = Database["public"]["Tables"]["course_modules"]["Row"];
@@ -29,6 +33,7 @@ type EnrollmentWithProfile = {
   progress_percent: number;
   profiles?: { full_name?: string | null; email?: string | null } | null;
 };
+type AnnouncementRow = Database["public"]["Tables"]["course_announcements"]["Row"];
 
 export default async function InstructorCourseDetailPage({
   params,
@@ -42,10 +47,11 @@ export default async function InstructorCourseDetailPage({
   const query = await searchParams;
   const supabase = await createSupabaseServerClient();
 
-  const [{ data: course }, { data: modules }, { data: enrollments }] = await Promise.all([
+  const [{ data: course }, { data: modules }, { data: enrollments }, { data: announcements }] = await Promise.all([
     supabase.from("courses").select("*").eq("id", courseId).single(),
     supabase.from("course_modules").select("*").eq("course_id", courseId).order("position"),
-    supabase.from("enrollments").select("*, profiles:student_id(full_name,email)").eq("course_id", courseId)
+    supabase.from("enrollments").select("*, profiles:student_id(full_name,email)").eq("course_id", courseId),
+    supabase.from("course_announcements").select("*").eq("course_id", courseId).order("created_at", { ascending: false })
   ]);
 
   if (!course) {
@@ -320,6 +326,53 @@ export default async function InstructorCourseDetailPage({
             </CardContent>
           </Card>
         </div>
+
+        <Card className="h-fit">
+          <CardHeader>
+            <h2 className="flex items-center gap-2 font-semibold text-text-primary">
+              <Megaphone size={18} />
+              Announcements
+            </h2>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            <form action={createAnnouncementAction} className="grid gap-3">
+              <input name="courseId" type="hidden" value={course.id} />
+              <Input label="Title" name="title" required />
+              <Textarea label="Message" name="body" required />
+              <SubmitButton className="w-fit" size="sm" pendingLabel="Posting…">
+                Post announcement
+              </SubmitButton>
+            </form>
+
+            <div className="grid gap-3">
+              {((announcements ?? []) as AnnouncementRow[]).length === 0 ? (
+                <p className="text-sm text-text-secondary">No announcements yet.</p>
+              ) : (
+                ((announcements ?? []) as AnnouncementRow[]).map((announcement) => (
+                  <div key={announcement.id} className="rounded-xl border border-border p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="font-semibold text-text-primary">{announcement.title}</p>
+                      <form action={deleteAnnouncementAction}>
+                        <input name="courseId" type="hidden" value={course.id} />
+                        <input name="announcementId" type="hidden" value={announcement.id} />
+                        <ConfirmSubmitButton
+                          aria-label={`Delete announcement: ${announcement.title}`}
+                          confirmMessage={`Delete the announcement "${announcement.title}"? Students will no longer see it.`}
+                          size="sm"
+                          variant="ghost"
+                        >
+                          <Trash2 size={14} />
+                        </ConfirmSubmitButton>
+                      </form>
+                    </div>
+                    <p className="mt-1 whitespace-pre-line text-sm text-text-secondary">{announcement.body}</p>
+                    <p className="mt-2 text-xs text-text-secondary">{formatDateTime(announcement.created_at)}</p>
+                  </div>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
         <Card className="h-fit">
           <CardHeader>
