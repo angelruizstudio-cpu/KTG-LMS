@@ -6,7 +6,7 @@ import { z } from "zod";
 
 import { requireProfile } from "@/lib/auth";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
-import { slugify } from "@/lib/utils";
+import { safeNextPath, slugify } from "@/lib/utils";
 
 const programSchema = z.object({
   name: z.string().min(2),
@@ -58,6 +58,21 @@ function adminTargetPath(returnTo: "programs" | "finance") {
   return returnTo === "finance" ? "/dashboard/admin/finance" : "/dashboard/admin/programs";
 }
 
+/**
+ * Resolve where a program form should return after acting. Detail-page forms pass a `redirectTo`
+ * hidden field (e.g. the program detail route); it is validated as a same-site path. Falls back to
+ * the given default so existing callers (list page, finance page) keep working.
+ */
+function programReturnPath(formData: FormData, fallback = "/dashboard/admin/programs") {
+  const raw = formData.get("redirectTo");
+  return safeNextPath(typeof raw === "string" ? raw : undefined, fallback);
+}
+
+function withQuery(path: string, key: string, value: string) {
+  const separator = path.includes("?") ? "&" : "?";
+  return `${path}${separator}${key}=${encodeURIComponent(value)}`;
+}
+
 export async function createProgramAction(formData: FormData) {
   const { profile } = await requireProfile(["admin"]);
   const parsed = programSchema.safeParse({
@@ -70,23 +85,29 @@ export async function createProgramAction(formData: FormData) {
   }
 
   const supabase = createSupabaseAdminClient();
-  const { error } = await supabase.from("programs").insert({
-    tenant_id: profile.default_tenant_id,
-    name: parsed.data.name,
-    slug: `${slugify(parsed.data.name)}-${Date.now().toString(36)}`,
-    description: parsed.data.description || null
-  });
+  const { data: created, error } = await supabase
+    .from("programs")
+    .insert({
+      tenant_id: profile.default_tenant_id,
+      name: parsed.data.name,
+      slug: `${slugify(parsed.data.name)}-${Date.now().toString(36)}`,
+      description: parsed.data.description || null
+    })
+    .select("id")
+    .single();
 
-  if (error) {
-    redirect(`/dashboard/admin/programs?error=${encodeURIComponent(error.message)}`);
+  if (error || !created) {
+    redirect(`/dashboard/admin/programs?error=${encodeURIComponent(error?.message ?? "Could not create program.")}`);
   }
 
   revalidatePath("/dashboard/admin/programs");
-  redirect(`/dashboard/admin/programs?created=${encodeURIComponent(parsed.data.name)}`);
+  // Land on the new program's detail page so the admin can immediately configure it.
+  redirect(withQuery(`/dashboard/admin/programs/${created.id}`, "created", parsed.data.name));
 }
 
 export async function addCourseToProgramAction(formData: FormData) {
   await requireProfile(["admin"]);
+  const back = programReturnPath(formData);
   const parsed = programCourseSchema.safeParse({
     programId: formData.get("programId"),
     courseId: formData.get("courseId"),
@@ -95,7 +116,7 @@ export async function addCourseToProgramAction(formData: FormData) {
   });
 
   if (!parsed.success) {
-    redirect("/dashboard/admin/programs?error=Program course details are invalid.");
+    redirect(withQuery(back, "error", "Program course details are invalid."));
   }
 
   const supabase = await createSupabaseServerClient();
@@ -110,21 +131,23 @@ export async function addCourseToProgramAction(formData: FormData) {
   );
 
   if (error) {
-    redirect(`/dashboard/admin/programs?error=${encodeURIComponent(error.message)}`);
+    redirect(withQuery(back, "error", error.message));
   }
 
-  revalidatePath("/dashboard/admin/programs");
+  revalidatePath(back);
+  redirect(back);
 }
 
 export async function assignStudentToProgramAction(formData: FormData) {
   await requireProfile(["admin"]);
+  const back = programReturnPath(formData);
   const parsed = programEnrollmentSchema.safeParse({
     programId: formData.get("programId"),
     studentId: formData.get("studentId")
   });
 
   if (!parsed.success) {
-    redirect("/dashboard/admin/programs?error=Program enrollment details are invalid.");
+    redirect(withQuery(back, "error", "Program enrollment details are invalid."));
   }
 
   const supabase = await createSupabaseServerClient();
@@ -138,7 +161,7 @@ export async function assignStudentToProgramAction(formData: FormData) {
   );
 
   if (error) {
-    redirect(`/dashboard/admin/programs?error=${encodeURIComponent(error.message)}`);
+    redirect(withQuery(back, "error", error.message));
   }
 
   const { error: financeError } = await supabase.from("finance_clearances").upsert(
@@ -152,21 +175,23 @@ export async function assignStudentToProgramAction(formData: FormData) {
   );
 
   if (financeError) {
-    redirect(`/dashboard/admin/programs?error=${encodeURIComponent(financeError.message)}`);
+    redirect(withQuery(back, "error", financeError.message));
   }
 
-  revalidatePath("/dashboard/admin/programs");
+  revalidatePath(back);
+  redirect(back);
 }
 
 export async function addPrerequisiteAction(formData: FormData) {
   await requireProfile(["admin"]);
+  const back = programReturnPath(formData);
   const parsed = prerequisiteSchema.safeParse({
     courseId: formData.get("courseId"),
     prerequisiteCourseId: formData.get("prerequisiteCourseId")
   });
 
   if (!parsed.success || parsed.data.courseId === parsed.data.prerequisiteCourseId) {
-    redirect("/dashboard/admin/programs?error=Prerequisite details are invalid.");
+    redirect(withQuery(back, "error", "Prerequisite details are invalid."));
   }
 
   const supabase = await createSupabaseServerClient();
@@ -179,21 +204,23 @@ export async function addPrerequisiteAction(formData: FormData) {
   );
 
   if (error) {
-    redirect(`/dashboard/admin/programs?error=${encodeURIComponent(error.message)}`);
+    redirect(withQuery(back, "error", error.message));
   }
 
-  revalidatePath("/dashboard/admin/programs");
+  revalidatePath(back);
+  redirect(back);
 }
 
 export async function grantCourseAccessAction(formData: FormData) {
   await requireProfile(["admin"]);
+  const back = programReturnPath(formData);
   const parsed = courseAccessSchema.safeParse({
     courseId: formData.get("courseId"),
     studentId: formData.get("studentId")
   });
 
   if (!parsed.success) {
-    redirect("/dashboard/admin/programs?error=Course access details are invalid.");
+    redirect(withQuery(back, "error", "Course access details are invalid."));
   }
 
   const supabase = await createSupabaseServerClient();
@@ -201,7 +228,7 @@ export async function grantCourseAccessAction(formData: FormData) {
   const programIds = (programCourses ?? []).map((programCourse) => programCourse.program_id);
 
   if (!programIds.length) {
-    redirect("/dashboard/admin/programs?error=That course is not attached to a program.");
+    redirect(withQuery(back, "error", "That course is not attached to a program."));
   }
 
   const { data: activeProgramEnrollment } = await supabase
@@ -214,7 +241,7 @@ export async function grantCourseAccessAction(formData: FormData) {
     .maybeSingle();
 
   if (!activeProgramEnrollment) {
-    redirect("/dashboard/admin/programs?error=Student must be assigned to a program containing that course.");
+    redirect(withQuery(back, "error", "Student must be assigned to a program containing that course."));
   }
 
   const { data: prerequisites } = await supabase
@@ -234,7 +261,7 @@ export async function grantCourseAccessAction(formData: FormData) {
     const hasMissingPrerequisites = prerequisiteIds.some((courseId) => !completedIds.has(courseId));
 
     if (hasMissingPrerequisites) {
-      redirect("/dashboard/admin/programs?error=Prerequisites must be completed before granting this course.");
+      redirect(withQuery(back, "error", "Prerequisites must be completed before granting this course."));
     }
   }
 
@@ -248,21 +275,23 @@ export async function grantCourseAccessAction(formData: FormData) {
   );
 
   if (error) {
-    redirect(`/dashboard/admin/programs?error=${encodeURIComponent(error.message)}`);
+    redirect(withQuery(back, "error", error.message));
   }
 
-  revalidatePath("/dashboard/admin/programs");
+  revalidatePath(back);
+  redirect(back);
 }
 
 export async function grantEligibleProgramAccessAction(formData: FormData) {
   await requireProfile(["admin"]);
+  const back = programReturnPath(formData);
   const parsed = eligibleProgramAccessSchema.safeParse({
     programId: formData.get("programId"),
     studentId: formData.get("studentId")
   });
 
   if (!parsed.success) {
-    redirect("/dashboard/admin/programs?error=Program access details are invalid.");
+    redirect(withQuery(back, "error", "Program access details are invalid."));
   }
 
   const supabase = await createSupabaseServerClient();
@@ -275,7 +304,7 @@ export async function grantEligibleProgramAccessAction(formData: FormData) {
     .maybeSingle();
 
   if (!programEnrollment) {
-    redirect("/dashboard/admin/programs?error=Student must be assigned to the program first.");
+    redirect(withQuery(back, "error", "Student must be assigned to the program first."));
   }
 
   const { data: programCourses } = await supabase
@@ -286,7 +315,7 @@ export async function grantEligibleProgramAccessAction(formData: FormData) {
   const courseIds = (programCourses ?? []).map((programCourse) => programCourse.course_id);
 
   if (!courseIds.length) {
-    redirect("/dashboard/admin/programs?error=This program does not have courses yet.");
+    redirect(withQuery(back, "error", "This program does not have courses yet."));
   }
 
   const [{ data: existingEnrollments }, { data: prerequisites }] = await Promise.all([
@@ -311,7 +340,7 @@ export async function grantEligibleProgramAccessAction(formData: FormData) {
   });
 
   if (!eligibleCourseIds.length) {
-    redirect("/dashboard/admin/programs?error=No eligible courses are ready to open for this student.");
+    redirect(withQuery(back, "error", "No eligible courses are ready to open for this student."));
   }
 
   const { error } = await supabase.from("enrollments").upsert(
@@ -324,11 +353,11 @@ export async function grantEligibleProgramAccessAction(formData: FormData) {
   );
 
   if (error) {
-    redirect(`/dashboard/admin/programs?error=${encodeURIComponent(error.message)}`);
+    redirect(withQuery(back, "error", error.message));
   }
 
-  revalidatePath("/dashboard/admin/programs");
-  redirect(`/dashboard/admin/programs?access=${eligibleCourseIds.length}`);
+  revalidatePath(back);
+  redirect(withQuery(back, "access", String(eligibleCourseIds.length)));
 }
 
 export async function updateFinanceClearanceAction(formData: FormData) {
@@ -342,10 +371,11 @@ export async function updateFinanceClearanceAction(formData: FormData) {
   });
 
   if (!parsed.success) {
-    const targetPath = String(formData.get("returnTo")) === "finance" ? "/dashboard/admin/finance" : "/dashboard/admin/programs";
-    redirect(`${targetPath}?error=Finance clearance details are invalid.`);
+    const fallback = String(formData.get("returnTo")) === "finance" ? "/dashboard/admin/finance" : "/dashboard/admin/programs";
+    redirect(withQuery(programReturnPath(formData, fallback), "error", "Finance clearance details are invalid."));
   }
 
+  const back = programReturnPath(formData, adminTargetPath(parsed.data.returnTo));
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.from("finance_clearances").upsert(
     {
@@ -359,7 +389,7 @@ export async function updateFinanceClearanceAction(formData: FormData) {
   );
 
   if (error) {
-    redirect(`${adminTargetPath(parsed.data.returnTo)}?error=${encodeURIComponent(error.message)}`);
+    redirect(withQuery(back, "error", error.message));
   }
 
   if (parsed.data.status === "cleared") {
@@ -369,6 +399,7 @@ export async function updateFinanceClearanceAction(formData: FormData) {
   revalidatePath("/dashboard/admin/programs");
   revalidatePath("/dashboard/admin/finance");
   revalidatePath("/dashboard/student/certificates");
+  redirect(withQuery(back, "saved", "finance"));
 }
 
 export async function issueProgramCertificateAction(formData: FormData) {
@@ -380,22 +411,22 @@ export async function issueProgramCertificateAction(formData: FormData) {
   });
 
   if (!parsed.success) {
-    const targetPath = String(formData.get("returnTo")) === "finance" ? "/dashboard/admin/finance" : "/dashboard/admin/programs";
-    redirect(`${targetPath}?error=Certificate details are invalid.`);
+    const fallback = String(formData.get("returnTo")) === "finance" ? "/dashboard/admin/finance" : "/dashboard/admin/programs";
+    redirect(withQuery(programReturnPath(formData, fallback), "error", "Certificate details are invalid."));
   }
 
+  const back = programReturnPath(formData, adminTargetPath(parsed.data.returnTo));
   const issued = await issueProgramCertificateIfEligible(parsed.data.programId, parsed.data.studentId, profile.id);
   if (!issued) {
     redirect(
-      `${adminTargetPath(parsed.data.returnTo)}?error=${encodeURIComponent(
-        "Certificate cannot be issued yet. Confirm all required courses are completed and finance is cleared."
-      )}`
+      withQuery(back, "error", "Certificate cannot be issued yet. Confirm all required courses are completed and finance is cleared.")
     );
   }
 
   revalidatePath("/dashboard/admin/programs");
   revalidatePath("/dashboard/admin/finance");
   revalidatePath("/dashboard/student/certificates");
+  redirect(withQuery(back, "issued", "1"));
 }
 
 async function issueProgramCertificateIfEligible(programId: string, studentId: string, issuedBy: string) {
