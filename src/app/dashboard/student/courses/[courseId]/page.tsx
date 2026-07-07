@@ -1,4 +1,4 @@
-import { CheckCircle2, FileText, PlayCircle, Trophy, UploadCloud } from "lucide-react";
+import { CheckCircle2, Clock, FileText, PlayCircle, Trophy, UploadCloud } from "lucide-react";
 import Link from "next/link";
 
 import { markLessonCompleteAction, submitAssignmentAction, submitQuizAction } from "@/app/dashboard/student/actions";
@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { requireProfile } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { formatDueDate, isOverdue } from "@/lib/utils";
 import type { Database } from "@/types/database";
 
 type LessonRow = Database["public"]["Tables"]["lessons"]["Row"];
@@ -119,6 +120,17 @@ export default async function StudentCoursePage({
                             {lesson.title}
                           </Link>
                           <p className="mt-1 text-xs capitalize text-text-secondary">{lesson.lesson_type}</p>
+                          {lesson.due_at ? (
+                            <p
+                              className={`mt-1 flex items-center gap-1 text-xs font-semibold ${
+                                isOverdue(lesson.due_at, completedIds.has(lesson.id)) ? "text-error" : "text-text-secondary"
+                              }`}
+                            >
+                              <Clock size={12} />
+                              {isOverdue(lesson.due_at, completedIds.has(lesson.id)) ? "Overdue — " : "Due "}
+                              {formatDueDate(lesson.due_at)}
+                            </p>
+                          ) : null}
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-2">

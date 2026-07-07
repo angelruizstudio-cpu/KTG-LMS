@@ -224,6 +224,7 @@ export interface Database {
           pdf_path: string | null;
           content: string | null;
           assignment_prompt: string | null;
+          due_at: string | null;
           position: number;
           created_at: string;
         };
@@ -236,6 +237,7 @@ export interface Database {
           pdf_path?: string | null;
           content?: string | null;
           assignment_prompt?: string | null;
+          due_at?: string | null;
           position: number;
         };
         Update: Partial<Database["public"]["Tables"]["lessons"]["Insert"]>;

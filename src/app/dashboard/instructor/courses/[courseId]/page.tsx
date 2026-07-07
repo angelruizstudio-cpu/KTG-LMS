@@ -297,6 +297,7 @@ export default async function InstructorCourseDetailPage({
                   <Input label="PDF storage path" name="pdfPath" placeholder="tenant/course/module/file.pdf" />
                   <Textarea label="Text content" name="content" />
                   <Textarea label="Assignment prompt" name="assignmentPrompt" />
+                  <Input label="Due date (optional)" name="dueAt" type="datetime-local" />
                   <Button className="w-fit" size="sm" type="submit">
                     Add lesson
                   </Button>

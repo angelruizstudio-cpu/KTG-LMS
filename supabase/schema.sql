@@ -81,6 +81,7 @@ create table public.lessons (
   pdf_path text,
   content text,
   assignment_prompt text,
+  due_at timestamptz,
   position integer not null default 1,
   created_at timestamptz not null default now()
 );

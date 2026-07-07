@@ -96,7 +96,66 @@ export const dictionary = {
       myLearning: "My learning",
       profileRoleAdmin: "Admin",
       profileRoleInstructor: "Instructor",
-      profileRoleStudent: "Student"
+      profileRoleStudent: "Student",
+      status: {
+        active: "active",
+        completed: "completed",
+        dropped: "dropped",
+        hold: "hold",
+        cleared: "cleared",
+        pending: "pending"
+      },
+      student: {
+        title: "My learning",
+        subtitle: "Continue assigned courses, track program progress, and earn certificates.",
+        viewProgramCourses: "View program courses",
+        activeCourses: "Active courses",
+        averageProgress: "Average progress",
+        certificates: "Certificates",
+        noActiveCoursesTitle: "No active courses yet",
+        noActiveCoursesDescription: "Your active courses appear here after an administrator grants access from your program.",
+        complete: "complete",
+        next: "Next",
+        programCertificateStatus: "Program certificate status",
+        finance: "Finance",
+        certificateIssued: "certificate issued",
+        financeCleared: "finance cleared",
+        pendingClearance: "pending clearance",
+        noProgramEnrollment: "No active program enrollment yet.",
+        toDo: "To do",
+        noPendingLessons: "No pending lessons right now.",
+        recentFeedback: "Recent feedback",
+        feedbackPlaceholder: "Grades and instructor feedback will appear here.",
+        assignmentFeedback: "Assignment feedback",
+        feedbackAvailable: "Feedback available",
+        academicFlow: "Academic flow",
+        flowStep1: "1. Complete assigned courses.",
+        flowStep2: "2. Pass quizzes and submitted work.",
+        flowStep3: "3. Finance clears the account.",
+        flowStep4: "4. Certificate is conferred.",
+        course: "Course"
+      },
+      admin: {
+        title: "Admin dashboard",
+        subtitle: "Manage people, instructors, courses, and platform health.",
+        manageUsers: "Manage users",
+        users: "Users",
+        programs: "Programs",
+        courses: "Courses",
+        enrollments: "Enrollments",
+        checklistTitle: "Getting started",
+        checklistStep1: "Create programs and add courses to each program.",
+        checklistStep2: "Create institution users and share their institution IDs.",
+        checklistStep3: "Assign students to programs and grant course access."
+      },
+      instructor: {
+        title: "Instructor dashboard",
+        subtitle: "Create courses, track enrollment, and manage learning outcomes.",
+        createCourse: "Create course",
+        courses: "Courses",
+        enrollments: "Enrollments",
+        gradeEntries: "Grade entries"
+      }
     }
   },
   es: {
@@ -178,7 +237,66 @@ export const dictionary = {
       myLearning: "Mi aprendizaje",
       profileRoleAdmin: "Admin",
       profileRoleInstructor: "Instructor",
-      profileRoleStudent: "Estudiante"
+      profileRoleStudent: "Estudiante",
+      status: {
+        active: "activo",
+        completed: "completado",
+        dropped: "retirado",
+        hold: "en espera",
+        cleared: "liberado",
+        pending: "pendiente"
+      },
+      student: {
+        title: "Mi aprendizaje",
+        subtitle: "Continúa tus cursos asignados, sigue tu progreso y obtén certificados.",
+        viewProgramCourses: "Ver cursos del programa",
+        activeCourses: "Cursos activos",
+        averageProgress: "Progreso promedio",
+        certificates: "Certificados",
+        noActiveCoursesTitle: "Aún no tienes cursos activos",
+        noActiveCoursesDescription: "Tus cursos activos aparecerán aquí cuando un administrador te otorgue acceso desde tu programa.",
+        complete: "completado",
+        next: "Siguiente",
+        programCertificateStatus: "Estado del certificado del programa",
+        finance: "Finanzas",
+        certificateIssued: "certificado emitido",
+        financeCleared: "finanzas liberadas",
+        pendingClearance: "liberación pendiente",
+        noProgramEnrollment: "Aún no tienes inscripción activa en un programa.",
+        toDo: "Pendientes",
+        noPendingLessons: "No hay lecciones pendientes por ahora.",
+        recentFeedback: "Retroalimentación reciente",
+        feedbackPlaceholder: "Las calificaciones y comentarios del instructor aparecerán aquí.",
+        assignmentFeedback: "Comentarios de la tarea",
+        feedbackAvailable: "Retroalimentación disponible",
+        academicFlow: "Flujo académico",
+        flowStep1: "1. Completa los cursos asignados.",
+        flowStep2: "2. Aprueba los cuestionarios y trabajos entregados.",
+        flowStep3: "3. Finanzas libera la cuenta.",
+        flowStep4: "4. Se otorga el certificado.",
+        course: "Curso"
+      },
+      admin: {
+        title: "Panel de administración",
+        subtitle: "Gestiona personas, instructores, cursos y el estado de la plataforma.",
+        manageUsers: "Gestionar usuarios",
+        users: "Usuarios",
+        programs: "Programas",
+        courses: "Cursos",
+        enrollments: "Inscripciones",
+        checklistTitle: "Primeros pasos",
+        checklistStep1: "Crea programas y agrega cursos a cada programa.",
+        checklistStep2: "Crea usuarios institucionales y comparte sus IDs institucionales.",
+        checklistStep3: "Asigna estudiantes a programas y otorga acceso a los cursos."
+      },
+      instructor: {
+        title: "Panel del instructor",
+        subtitle: "Crea cursos, sigue las inscripciones y gestiona los resultados de aprendizaje.",
+        createCourse: "Crear curso",
+        courses: "Cursos",
+        enrollments: "Inscripciones",
+        gradeEntries: "Entradas de calificación"
+      }
     }
   },
   zh: {
@@ -258,7 +376,66 @@ export const dictionary = {
       myLearning: "我的学习",
       profileRoleAdmin: "管理员",
       profileRoleInstructor: "教师",
-      profileRoleStudent: "学生"
+      profileRoleStudent: "学生",
+      status: {
+        active: "进行中",
+        completed: "已完成",
+        dropped: "已退出",
+        hold: "暂缓",
+        cleared: "已通过",
+        pending: "待处理"
+      },
+      student: {
+        title: "我的学习",
+        subtitle: "继续已分配的课程，跟踪项目进度并获得证书。",
+        viewProgramCourses: "查看项目课程",
+        activeCourses: "进行中的课程",
+        averageProgress: "平均进度",
+        certificates: "证书",
+        noActiveCoursesTitle: "还没有进行中的课程",
+        noActiveCoursesDescription: "管理员从你的项目授予访问权限后，你的课程会显示在这里。",
+        complete: "完成",
+        next: "下一课",
+        programCertificateStatus: "项目证书状态",
+        finance: "财务",
+        certificateIssued: "证书已颁发",
+        financeCleared: "财务已通过",
+        pendingClearance: "等待审核",
+        noProgramEnrollment: "尚未加入任何项目。",
+        toDo: "待办事项",
+        noPendingLessons: "目前没有待完成的课程。",
+        recentFeedback: "最近的反馈",
+        feedbackPlaceholder: "成绩和教师反馈会显示在这里。",
+        assignmentFeedback: "作业反馈",
+        feedbackAvailable: "反馈可用",
+        academicFlow: "学习流程",
+        flowStep1: "1. 完成已分配的课程。",
+        flowStep2: "2. 通过测验和提交的作业。",
+        flowStep3: "3. 财务审核账户。",
+        flowStep4: "4. 颁发证书。",
+        course: "课程"
+      },
+      admin: {
+        title: "管理员仪表板",
+        subtitle: "管理人员、教师、课程和平台状况。",
+        manageUsers: "管理用户",
+        users: "用户",
+        programs: "项目",
+        courses: "课程",
+        enrollments: "注册",
+        checklistTitle: "入门指南",
+        checklistStep1: "创建项目并为每个项目添加课程。",
+        checklistStep2: "创建机构用户并分享他们的机构 ID。",
+        checklistStep3: "将学生分配到项目并授予课程访问权限。"
+      },
+      instructor: {
+        title: "教师仪表板",
+        subtitle: "创建课程、跟踪注册情况并管理学习成果。",
+        createCourse: "创建课程",
+        courses: "课程",
+        enrollments: "注册",
+        gradeEntries: "成绩记录"
+      }
     }
   }
 } as const;

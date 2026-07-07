@@ -29,6 +29,7 @@ const lessonSchema = z.object({
   pdfPath: z.string().optional(),
   content: z.string().optional(),
   assignmentPrompt: z.string().optional(),
+  dueAt: z.string().optional(),
   position: z.coerce.number().int().min(1)
 });
 
@@ -139,11 +140,24 @@ export async function createLessonAction(formData: FormData) {
     pdfPath: formData.get("pdfPath") || "",
     content: formData.get("content") || "",
     assignmentPrompt: formData.get("assignmentPrompt") || "",
+    dueAt: formData.get("dueAt") || "",
     position: formData.get("position")
   });
 
   if (!parsed.success) {
     redirect(`/dashboard/instructor/courses/${courseId}?error=Lesson details are invalid.`);
+  }
+
+  // `dueAt` comes from a <input type="datetime-local"> value (e.g. "2026-03-01T17:00"), which has
+  // no timezone — Date() interprets it in the server's local time. Validate before calling
+  // toISOString(), which throws RangeError on an invalid date rather than returning null.
+  let dueAtIso: string | null = null;
+  if (parsed.data.dueAt) {
+    const parsedDueAt = new Date(parsed.data.dueAt);
+    if (Number.isNaN(parsedDueAt.getTime())) {
+      redirect(`/dashboard/instructor/courses/${courseId}?error=Due date is invalid.`);
+    }
+    dueAtIso = parsedDueAt.toISOString();
   }
 
   const supabase = await createSupabaseServerClient();
@@ -187,6 +201,7 @@ export async function createLessonAction(formData: FormData) {
     pdf_path: pdfPath,
     content: parsed.data.content || null,
     assignment_prompt: parsed.data.assignmentPrompt || null,
+    due_at: dueAtIso,
     position: parsed.data.position
   });
   revalidatePath(`/dashboard/instructor/courses/${courseId}`);
