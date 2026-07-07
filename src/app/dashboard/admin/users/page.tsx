@@ -1,6 +1,7 @@
-import { UserPlus } from "lucide-react";
+import { UserPlus, Users } from "lucide-react";
 
 import { createInstructorAction, updateUserRoleAction } from "@/app/dashboard/admin/users/actions";
+import { BulkImportUsersForm } from "@/app/dashboard/admin/users/bulk-import-users-form";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -90,6 +91,18 @@ export default async function AdminUsersPage({
             </Select>
             <SubmitButton pendingLabel="Creating…">Create</SubmitButton>
           </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <h2 className="flex items-center gap-2 font-semibold text-text-primary">
+            <Users size={18} />
+            Bulk import (CSV)
+          </h2>
+        </CardHeader>
+        <CardContent>
+          <BulkImportUsersForm />
         </CardContent>
       </Card>
 
