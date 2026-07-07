@@ -440,6 +440,24 @@ export interface Database {
         };
         Update: Partial<Database["public"]["Tables"]["program_certificates"]["Insert"]>;
       };
+      course_announcements: {
+        Row: {
+          id: string;
+          course_id: string;
+          title: string;
+          body: string;
+          created_by: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          course_id: string;
+          title: string;
+          body: string;
+          created_by: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["course_announcements"]["Insert"]>;
+      };
     };
     Views: Record<string, never>;
     Functions: {

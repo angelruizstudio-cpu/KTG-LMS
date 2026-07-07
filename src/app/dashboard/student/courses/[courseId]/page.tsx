@@ -1,4 +1,4 @@
-import { CheckCircle2, Clock, FileText, PlayCircle, Trophy, UploadCloud } from "lucide-react";
+import { CheckCircle2, Clock, FileText, Megaphone, PlayCircle, Trophy, UploadCloud } from "lucide-react";
 import Link from "next/link";
 
 import { markLessonCompleteAction, submitAssignmentAction, submitQuizAction } from "@/app/dashboard/student/actions";
@@ -9,11 +9,12 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { requireProfile } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { formatDueDate, isOverdue } from "@/lib/utils";
+import { formatDateTime, formatDueDate, isOverdue } from "@/lib/utils";
 import type { Database } from "@/types/database";
 
 type LessonRow = Database["public"]["Tables"]["lessons"]["Row"];
 type AssignmentSubmissionRow = Database["public"]["Tables"]["assignment_submissions"]["Row"];
+type AnnouncementRow = Database["public"]["Tables"]["course_announcements"]["Row"];
 
 export default async function StudentCoursePage({
   params
@@ -24,10 +25,11 @@ export default async function StudentCoursePage({
   const { courseId } = await params;
   const supabase = await createSupabaseServerClient();
 
-  const [{ data: course }, { data: enrollment }, { data: modules }] = await Promise.all([
+  const [{ data: course }, { data: enrollment }, { data: modules }, { data: announcements }] = await Promise.all([
     supabase.from("courses").select("*").eq("id", courseId).single(),
     supabase.from("enrollments").select("*").eq("course_id", courseId).eq("student_id", profile.id).maybeSingle(),
-    supabase.from("course_modules").select("*").eq("course_id", courseId).order("position")
+    supabase.from("course_modules").select("*").eq("course_id", courseId).order("position"),
+    supabase.from("course_announcements").select("*").eq("course_id", courseId).order("created_at", { ascending: false }).limit(5)
   ]);
 
   if (!course || !enrollment) {
@@ -89,6 +91,26 @@ export default async function StudentCoursePage({
           </Link>
         ) : null}
       </div>
+
+      {((announcements ?? []) as AnnouncementRow[]).length > 0 ? (
+        <Card>
+          <CardHeader>
+            <h2 className="flex items-center gap-2 font-semibold text-text-primary">
+              <Megaphone size={18} />
+              Announcements
+            </h2>
+          </CardHeader>
+          <CardContent className="grid gap-3">
+            {((announcements ?? []) as AnnouncementRow[]).map((announcement) => (
+              <div key={announcement.id} className="rounded-xl border border-border bg-background p-3">
+                <p className="font-semibold text-text-primary">{announcement.title}</p>
+                <p className="mt-1 whitespace-pre-line text-sm text-text-secondary">{announcement.body}</p>
+                <p className="mt-2 text-xs text-text-secondary">{formatDateTime(announcement.created_at)}</p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      ) : null}
 
       <div className="grid gap-4">
         {(modules ?? []).map((module) => (
