@@ -32,14 +32,17 @@ const config: Config = {
         border: "var(--color-border)",
         success: {
           DEFAULT: "var(--color-success)",
+          strong: "var(--color-success-strong)",
           light: "color-mix(in srgb, var(--color-success) 12%, white)"
         },
         warning: {
           DEFAULT: "var(--color-warning)",
+          strong: "var(--color-warning-strong)",
           light: "color-mix(in srgb, var(--color-warning) 14%, white)"
         },
         error: {
           DEFAULT: "var(--color-error)",
+          hover: "var(--color-error-hover)",
           light: "color-mix(in srgb, var(--color-error) 10%, white)"
         },
         info: "var(--color-info)"

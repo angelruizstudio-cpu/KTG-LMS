@@ -29,12 +29,22 @@ export function DashboardNavLinks({ items, variant = "sidebar" }: { items: Dashb
   const pathname = usePathname();
 
   if (variant === "bottom") {
+    // Column count follows the number of items (capped at 6) so no item is hidden — an admin has
+    // six nav entries and a fixed 3-column grid was silently dropping Settings on mobile.
+    const gridColsClass =
+      { 1: "grid-cols-1", 2: "grid-cols-2", 3: "grid-cols-3", 4: "grid-cols-4", 5: "grid-cols-5", 6: "grid-cols-6" }[
+        Math.min(items.length, 6)
+      ] ?? "grid-cols-4";
+
     return (
       <nav
         aria-label="Dashboard mobile navigation"
-        className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-3 border-t border-border bg-surface/95 px-2 pb-[calc(env(safe-area-inset-bottom)+0.35rem)] pt-2 shadow-soft backdrop-blur lg:hidden print:hidden"
+        className={cn(
+          "fixed inset-x-0 bottom-0 z-30 grid border-t border-border bg-surface/95 px-2 pb-[calc(env(safe-area-inset-bottom)+0.35rem)] pt-2 shadow-soft backdrop-blur lg:hidden print:hidden",
+          gridColsClass
+        )}
       >
-        {items.slice(0, 5).map((item) => {
+        {items.slice(0, 6).map((item) => {
           const Icon = iconMap[item.iconKey];
           const active = isActivePath(pathname, item.href);
 
