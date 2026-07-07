@@ -74,7 +74,10 @@ export async function markLessonCompleteAction(formData: FormData) {
   const progressPercent = lessonCount ? Math.round(((completedCount ?? 0) / lessonCount) * 100) : 0;
   const completed = progressPercent >= 100;
 
-  await supabase
+  // Completion/progress is authoritative state that gates certificates, so it is written with the
+  // service role rather than a student-writable RLS path (see security finding H2).
+  const admin = createSupabaseAdminClient();
+  await admin
     .from("enrollments")
     .update({
       progress_percent: progressPercent,
@@ -96,13 +99,39 @@ export async function markLessonCompleteAction(formData: FormData) {
 export async function submitQuizAction(formData: FormData) {
   const { profile } = await requireProfile(["student", "admin"]);
   const quizId = String(formData.get("quizId"));
-  const courseId = String(formData.get("courseId"));
-  const supabase = await createSupabaseServerClient();
-  const { data: quiz } = await supabase.from("quizzes").select("*").eq("id", quizId).single();
-  const { data: questions } = await supabase.from("quiz_questions").select("*").eq("quiz_id", quizId);
+  // Correct answers, attempts and grades are handled with the service role so that
+  // quiz_questions.correct_answer is never read through a client-reachable path and so that
+  // students cannot forge their own attempts/grades (see security findings H1/H2).
+  const admin = createSupabaseAdminClient();
+
+  const { data: quiz } = await admin.from("quizzes").select("*").eq("id", quizId).single();
+  const { data: questions } = await admin.from("quiz_questions").select("*").eq("quiz_id", quizId);
 
   if (!quiz || !questions || questions.length === 0) {
-    redirect(`/dashboard/student/courses/${courseId}?error=Quiz not found.`);
+    redirect(`/dashboard/student/catalog?error=Quiz not found.`);
+  }
+
+  // Derive the owning course from the quiz itself (never trust a client-supplied courseId).
+  const { data: lesson } = await admin.from("lessons").select("module_id").eq("id", quiz.lesson_id).single();
+  const { data: courseModule } = lesson
+    ? await admin.from("course_modules").select("course_id").eq("id", lesson.module_id).single()
+    : { data: null };
+  const courseId = courseModule?.course_id;
+
+  if (!courseId) {
+    redirect(`/dashboard/student/catalog?error=Quiz not found.`);
+  }
+
+  // Verify the caller is actually enrolled in that course.
+  const { data: enrollment } = await admin
+    .from("enrollments")
+    .select("id")
+    .eq("course_id", courseId)
+    .eq("student_id", profile.id)
+    .maybeSingle();
+
+  if (!enrollment && profile.role !== "admin") {
+    redirect(`/dashboard/student/catalog?error=${encodeURIComponent("You do not have access to this course.")}`);
   }
 
   const answers = Object.fromEntries(questions.map((question) => [question.id, String(formData.get(question.id) ?? "")]));
@@ -112,7 +141,7 @@ export async function submitQuizAction(formData: FormData) {
   }, 0);
   const percent = maxScore ? Math.round((score / maxScore) * 100) : 0;
 
-  await supabase.from("quiz_attempts").insert({
+  await admin.from("quiz_attempts").insert({
     quiz_id: quizId,
     student_id: profile.id,
     answers,
@@ -120,7 +149,7 @@ export async function submitQuizAction(formData: FormData) {
     passed: percent >= quiz.passing_score
   });
 
-  await supabase.from("gradebook_entries").insert({
+  await admin.from("gradebook_entries").insert({
     course_id: courseId,
     student_id: profile.id,
     item_name: quiz.title,
