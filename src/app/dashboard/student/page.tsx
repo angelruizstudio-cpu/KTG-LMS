@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { LinkButton } from "@/components/ui/link-button";
 import { requireProfile } from "@/lib/auth";
+import { getDictionary } from "@/lib/i18n";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type EnrollmentWithCourse = {
@@ -76,6 +77,9 @@ type AssignmentSubmission = {
 export default async function StudentDashboardPage() {
   const { profile } = await requireProfile(["student", "admin"]);
   const supabase = await createSupabaseServerClient();
+  const { t } = await getDictionary();
+  const td = t.dashboard.student;
+  const statusLabel = (value: string) => t.dashboard.status[value as keyof typeof t.dashboard.status] ?? value;
 
   const [{ data: enrollments }, { data: programEnrollments }, { data: financeClearances }, { data: programCertificates }] =
     await Promise.all([
@@ -154,7 +158,7 @@ export default async function StudentDashboardPage() {
     ...(((gradebookEntries ?? []) as GradebookEntry[]).map((entry) => ({
       id: `grade-${entry.id}`,
       title: entry.item_name,
-      context: entry.courses?.title ?? "Course",
+      context: entry.courses?.title ?? td.course,
       detail: `${entry.score}/${entry.max_score}${entry.feedback ? ` - ${entry.feedback}` : ""}`,
       date: entry.created_at
     })) ?? []),
@@ -162,12 +166,12 @@ export default async function StudentDashboardPage() {
       .filter((submission) => submission.feedback || submission.grade_score !== null)
       .map((submission) => ({
         id: `submission-${submission.id}`,
-        title: "Assignment feedback",
+        title: td.assignmentFeedback,
         context: submission.status,
         detail:
           submission.grade_score !== null
             ? `${submission.grade_score}/${submission.max_score}${submission.feedback ? ` - ${submission.feedback}` : ""}`
-            : submission.feedback ?? "Feedback available",
+            : submission.feedback ?? td.feedbackAvailable,
         date: submission.submitted_at
       })) ?? [])
   ]
@@ -178,17 +182,17 @@ export default async function StudentDashboardPage() {
     <div className="grid gap-6">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-3xl font-bold text-text-primary">My learning</h1>
-          <p className="mt-2 text-text-secondary">Continue assigned courses, track program progress, and earn certificates.</p>
+          <h1 className="text-3xl font-bold text-text-primary">{td.title}</h1>
+          <p className="mt-2 text-text-secondary">{td.subtitle}</p>
         </div>
-        <LinkButton href="/dashboard/student/catalog">View program courses</LinkButton>
+        <LinkButton href="/dashboard/student/catalog">{td.viewProgramCourses}</LinkButton>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardContent className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-semibold text-text-secondary">Active courses</p>
+              <p className="text-sm font-semibold text-text-secondary">{td.activeCourses}</p>
               <p className="mt-2 text-3xl font-bold text-text-primary">{activeEnrollments.length}</p>
             </div>
             <BookOpenCheck className="text-secondary" size={34} />
@@ -197,7 +201,7 @@ export default async function StudentDashboardPage() {
         <Card>
           <CardContent className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-semibold text-text-secondary">Average progress</p>
+              <p className="text-sm font-semibold text-text-secondary">{td.averageProgress}</p>
               <p className="mt-2 text-3xl font-bold text-text-primary">{averageProgress}%</p>
             </div>
             <CheckCircle2 className="text-success" size={34} />
@@ -206,7 +210,7 @@ export default async function StudentDashboardPage() {
         <Card>
           <CardContent className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-semibold text-text-secondary">Certificates</p>
+              <p className="text-sm font-semibold text-text-secondary">{td.certificates}</p>
               <p className="mt-2 text-3xl font-bold text-text-primary">{(programCertificates ?? []).length}</p>
             </div>
             <Award className="text-primary-hover" size={34} />
@@ -218,9 +222,9 @@ export default async function StudentDashboardPage() {
         <div className="grid gap-4">
           {activeEnrollments.length === 0 ? (
             <EmptyState
-              action={<LinkButton href="/dashboard/student/catalog">View program courses</LinkButton>}
-              description="Your active courses appear here after an administrator grants access from your program."
-              title="No active courses yet"
+              action={<LinkButton href="/dashboard/student/catalog">{td.viewProgramCourses}</LinkButton>}
+              description={td.noActiveCoursesDescription}
+              title={td.noActiveCoursesTitle}
             />
           ) : (
             <div className="grid gap-4 md:grid-cols-2">
@@ -236,14 +240,14 @@ export default async function StudentDashboardPage() {
                             <h2 className="text-lg font-bold text-text-primary">{enrollment.courses?.title}</h2>
                             <p className="mt-2 line-clamp-2 text-sm text-text-secondary">{enrollment.courses?.description}</p>
                           </div>
-                          <Badge tone={enrollment.status === "completed" ? "green" : "blue"}>{enrollment.status}</Badge>
+                          <Badge tone={enrollment.status === "completed" ? "green" : "blue"}>{statusLabel(enrollment.status)}</Badge>
                         </div>
                         <div className="mt-6 h-2 rounded-full bg-secondary-light">
                           <div className="h-2 rounded-full bg-primary" style={{ width: `${enrollment.progress_percent}%` }} />
                         </div>
                         <div className="mt-3 flex items-center justify-between gap-3 text-sm">
-                          <span className="font-semibold text-text-secondary">{enrollment.progress_percent}% complete</span>
-                          {nextLesson ? <span className="font-semibold text-primary-hover">Next: {nextLesson.title}</span> : null}
+                          <span className="font-semibold text-text-secondary">{enrollment.progress_percent}% {td.complete}</span>
+                          {nextLesson ? <span className="font-semibold text-primary-hover">{td.next}: {nextLesson.title}</span> : null}
                         </div>
                       </CardContent>
                     </Card>
@@ -255,7 +259,7 @@ export default async function StudentDashboardPage() {
 
           <Card>
             <CardHeader>
-              <h2 className="font-semibold text-text-primary">Program certificate status</h2>
+              <h2 className="font-semibold text-text-primary">{td.programCertificateStatus}</h2>
             </CardHeader>
             <CardContent className="grid gap-3">
               {(programEnrollments ?? []).length ? (
@@ -266,13 +270,13 @@ export default async function StudentDashboardPage() {
                     <div key={programEnrollment.program_id} className="rounded-xl border border-border bg-background p-4">
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <div>
-                          <p className="font-semibold text-text-primary">{programEnrollment.programs?.name ?? "Program"}</p>
+                          <p className="font-semibold text-text-primary">{programEnrollment.programs?.name ?? t.common.programs}</p>
                           <p className="mt-1 text-sm text-text-secondary">
-                            Finance: <span className="font-semibold">{finance?.status ?? "hold"}</span>
+                            {td.finance}: <span className="font-semibold">{statusLabel(finance?.status ?? "hold")}</span>
                           </p>
                         </div>
                         <Badge tone={certificate ? "green" : finance?.status === "cleared" ? "blue" : "amber"}>
-                          {certificate ? "certificate issued" : finance?.status === "cleared" ? "finance cleared" : "pending clearance"}
+                          {certificate ? td.certificateIssued : finance?.status === "cleared" ? td.financeCleared : td.pendingClearance}
                         </Badge>
                       </div>
                       {certificate ? (
@@ -284,7 +288,7 @@ export default async function StudentDashboardPage() {
                   );
                 })
               ) : (
-                <p className="text-sm text-text-secondary">No active program enrollment yet.</p>
+                <p className="text-sm text-text-secondary">{td.noProgramEnrollment}</p>
               )}
             </CardContent>
           </Card>
@@ -294,7 +298,7 @@ export default async function StudentDashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-center gap-2">
               <CalendarDays className="text-secondary" size={18} />
-              <h2 className="font-semibold text-text-primary">To do</h2>
+              <h2 className="font-semibold text-text-primary">{td.toDo}</h2>
             </CardHeader>
             <CardContent className="grid gap-3">
               {toDoItems.length ? (
@@ -312,7 +316,7 @@ export default async function StudentDashboardPage() {
                   </Link>
                 ))
               ) : (
-                <p className="text-sm text-text-secondary">No pending lessons right now.</p>
+                <p className="text-sm text-text-secondary">{td.noPendingLessons}</p>
               )}
             </CardContent>
           </Card>
@@ -320,7 +324,7 @@ export default async function StudentDashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-center gap-2">
               <MessageSquareText className="text-primary-hover" size={18} />
-              <h2 className="font-semibold text-text-primary">Recent feedback</h2>
+              <h2 className="font-semibold text-text-primary">{td.recentFeedback}</h2>
             </CardHeader>
             <CardContent className="grid gap-3">
               {recentFeedback.length ? (
@@ -332,7 +336,7 @@ export default async function StudentDashboardPage() {
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-text-secondary">Grades and instructor feedback will appear here.</p>
+                <p className="text-sm text-text-secondary">{td.feedbackPlaceholder}</p>
               )}
             </CardContent>
           </Card>
@@ -340,13 +344,13 @@ export default async function StudentDashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-center gap-2">
               <ClipboardCheck className="text-success" size={18} />
-              <h2 className="font-semibold text-text-primary">Academic flow</h2>
+              <h2 className="font-semibold text-text-primary">{td.academicFlow}</h2>
             </CardHeader>
             <CardContent className="grid gap-2 text-sm text-text-secondary">
-              <p>1. Complete assigned courses.</p>
-              <p>2. Pass quizzes and submitted work.</p>
-              <p>3. Finance clears the account.</p>
-              <p>4. Certificate is conferred.</p>
+              <p>{td.flowStep1}</p>
+              <p>{td.flowStep2}</p>
+              <p>{td.flowStep3}</p>
+              <p>{td.flowStep4}</p>
             </CardContent>
           </Card>
         </aside>

@@ -35,8 +35,9 @@ const navByRole: Record<UserRole, Array<{ href: string; labelKey: string; iconKe
 };
 
 function navLabel(labelKey: string, t: Awaited<ReturnType<typeof getDictionary>>["t"]) {
-  if (labelKey in t.dashboard) {
-    return t.dashboard[labelKey as keyof typeof t.dashboard];
+  const dashboardValue = t.dashboard[labelKey as keyof typeof t.dashboard];
+  if (typeof dashboardValue === "string") {
+    return dashboardValue;
   }
 
   return t.common[labelKey as keyof typeof t.common] ?? labelKey;
