@@ -50,7 +50,7 @@ export default async function StudentCoursePage({
       : Promise.resolve({ data: [] as LessonRow[] }),
     supabase.from("lesson_progress").select("*").eq("student_id", profile.id),
     supabase.from("quizzes").select("*"),
-    supabase.from("quiz_questions").select("*").order("position"),
+    supabase.from("quiz_questions").select("id,quiz_id,prompt,choices,points,position").order("position"),
     supabase.from("assignment_submissions").select("*").eq("student_id", profile.id)
   ]);
 

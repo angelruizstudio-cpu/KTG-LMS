@@ -14,7 +14,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { requireProfile } from "@/lib/auth";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/database";
 
 type ModuleRow = Database["public"]["Tables"]["course_modules"]["Row"];
@@ -61,8 +61,11 @@ export default async function InstructorCourseDetailPage({
     ? await supabase.from("quizzes").select("*").in("lesson_id", lessonIds)
     : { data: [] as QuizRow[] };
   const quizIds = (quizzes ?? []).map((quiz) => quiz.id);
+  // correct_answer is not readable by the authenticated role (see security finding H1); read the
+  // full question rows with the service role, scoped to this course's quizzes (authorized above).
+  const admin = createSupabaseAdminClient();
   const { data: questions } = quizIds.length
-    ? await supabase.from("quiz_questions").select("*").in("quiz_id", quizIds).order("position")
+    ? await admin.from("quiz_questions").select("*").in("quiz_id", quizIds).order("position")
     : { data: [] as QuestionRow[] };
   const { data: assignmentSubmissions } = lessonIds.length
     ? await supabase

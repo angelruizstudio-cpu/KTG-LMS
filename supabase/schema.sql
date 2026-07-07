@@ -462,13 +462,29 @@ with check (
   )
 );
 
-create policy "Questions follow quiz access"
+-- correct_answer must never be readable by client roles (see migration 010).
+revoke select on public.quiz_questions from anon, authenticated;
+grant select (id, quiz_id, prompt, choices, points, position) on public.quiz_questions to anon, authenticated;
+grant all on public.quiz_questions to service_role;
+
+create policy "Questions visible to enrolled students and staff"
 on public.quiz_questions for select
 using (
   exists (
     select 1
     from public.quizzes
+    join public.lessons on lessons.id = quizzes.lesson_id
+    join public.course_modules on course_modules.id = lessons.module_id
     where quizzes.id = quiz_questions.quiz_id
+      and (
+        public.is_instructor_for_course(course_modules.course_id)
+        or exists (
+          select 1
+          from public.enrollments
+          where enrollments.course_id = course_modules.course_id
+            and enrollments.student_id = auth.uid()
+        )
+      )
   )
 );
 
@@ -495,10 +511,16 @@ with check (
   )
 );
 
-create policy "Students view and create their attempts"
+-- Students may read their own attempts, but attempts are recorded server-side (service role)
+-- with recomputed scores; direct client writes are not allowed (see migration 010).
+create policy "Students view their attempts"
+on public.quiz_attempts for select
+using (student_id = auth.uid() or public.is_admin());
+
+create policy "Admins manage attempts"
 on public.quiz_attempts for all
-using (student_id = auth.uid() or public.is_admin())
-with check (student_id = auth.uid() or public.is_admin());
+using (public.is_admin())
+with check (public.is_admin());
 
 create policy "Assignment submissions visible to students and instructors"
 on public.assignment_submissions for select
@@ -547,10 +569,12 @@ create policy "Gradebook visible to students and course instructors"
 on public.gradebook_entries for select
 using (student_id = auth.uid() or public.is_instructor_for_course(course_id));
 
+-- Only instructors/admins may write grades. Students read via the SELECT policy above;
+-- quiz gradebook rows are written server-side via the service role (see migration 010).
 create policy "Course instructors manage gradebook"
 on public.gradebook_entries for all
-using (public.is_instructor_for_course(course_id) or student_id = auth.uid())
-with check (public.is_instructor_for_course(course_id) or student_id = auth.uid());
+using (public.is_instructor_for_course(course_id))
+with check (public.is_instructor_for_course(course_id));
 
 create policy "Certificates visible to owners and instructors"
 on public.certificates for select
@@ -1024,8 +1048,11 @@ with check (
   )
 );
 
+-- Students may not flip their own progress/status; completion is written server-side via the
+-- service role (see migration 010). Instructors/admins may still edit enrollments.
 drop policy if exists "Students and instructors update enrollments" on public.enrollments;
-create policy "Tenant students and instructors update enrollments"
+drop policy if exists "Tenant students and instructors update enrollments" on public.enrollments;
+create policy "Tenant instructors update enrollments"
 on public.enrollments for update
 using (
   exists (
@@ -1033,7 +1060,7 @@ using (
     from public.courses
     where courses.id = enrollments.course_id
       and courses.tenant_id = public.current_tenant_id()
-      and (enrollments.student_id = auth.uid() or public.is_instructor_for_course(enrollments.course_id))
+      and public.is_instructor_for_course(enrollments.course_id)
   )
 )
 with check (
@@ -1042,7 +1069,7 @@ with check (
     from public.courses
     where courses.id = enrollments.course_id
       and courses.tenant_id = public.current_tenant_id()
-      and (enrollments.student_id = auth.uid() or public.is_instructor_for_course(enrollments.course_id))
+      and public.is_instructor_for_course(enrollments.course_id)
   )
 );
 
