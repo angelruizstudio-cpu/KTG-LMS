@@ -22,8 +22,11 @@
   --color-text-inverse: #ffffff;
   --color-border: #e5e7eb;
   --color-success: #22c55e;
+  --color-success-strong: #15803d;
   --color-warning: #f59e0b;
+  --color-warning-strong: #b45309;
   --color-error: #ef4444;
+  --color-error-hover: #dc2626;
   --color-info: #36a3da;
 
   /* shadcn/ui-compatible theme variables */

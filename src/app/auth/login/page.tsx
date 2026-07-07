@@ -3,9 +3,11 @@ import Link from "next/link";
 import { loginAction } from "@/app/auth/actions";
 import { BrandLogo } from "@/components/brand-logo";
 import { LanguageSwitcher } from "@/components/language-switcher";
-import { Button } from "@/components/ui/button";
+import { Alert } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { getDictionary } from "@/lib/i18n";
+import { sanitizeBannerMessage } from "@/lib/utils";
 
 export default async function LoginPage({
   searchParams
@@ -31,14 +33,14 @@ export default async function LoginPage({
           <p className="mt-2 text-sm text-text-secondary">{t.auth.loginDescription}</p>
         </div>
         {params.error ? (
-          <div className="mt-5 rounded-xl border border-error bg-error-light px-3 py-2 text-sm text-error">
-            {params.error}
-          </div>
+          <Alert variant="error" className="mt-5">
+            {sanitizeBannerMessage(params.error)}
+          </Alert>
         ) : null}
         {params.message ? (
-          <div className="mt-5 rounded-xl border border-success bg-success-light px-3 py-2 text-sm text-success">
-            {params.message}
-          </div>
+          <Alert variant="success" className="mt-5">
+            {sanitizeBannerMessage(params.message)}
+          </Alert>
         ) : null}
         <form action={loginAction} className="mt-6 grid gap-4">
           <input name="next" type="hidden" value={params.next ?? "/dashboard"} />
@@ -52,9 +54,9 @@ export default async function LoginPage({
             required
           />
           <Input label={t.auth.password} name="password" type="password" autoComplete="current-password" required />
-          <Button type="submit" className="mt-2">
+          <SubmitButton className="mt-2" pendingLabel={`${t.auth.login}…`}>
             {t.auth.login}
-          </Button>
+          </SubmitButton>
         </form>
         <p className="mt-5 text-center text-sm">
           <Link className="font-semibold text-primary-hover" href="/auth/forgot-password?accountType=institution">

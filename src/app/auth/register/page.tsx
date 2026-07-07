@@ -2,7 +2,9 @@ import Link from "next/link";
 
 import { BrandLogo } from "@/components/brand-logo";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { Alert } from "@/components/ui/alert";
 import { getDictionary } from "@/lib/i18n";
+import { sanitizeBannerMessage } from "@/lib/utils";
 
 export default async function RegisterPage({
   searchParams
@@ -44,9 +46,9 @@ export default async function RegisterPage({
           <p className="mt-2 text-sm text-text-secondary">{copy.description}</p>
         </div>
         {params.error ? (
-          <div className="mt-5 rounded-xl border border-error bg-error-light px-3 py-2 text-sm text-error">
-            {params.error}
-          </div>
+          <Alert variant="error" className="mt-5">
+            {sanitizeBannerMessage(params.error)}
+          </Alert>
         ) : null}
         <div className="mt-6 rounded-2xl border border-border bg-background p-4 text-sm leading-6 text-text-secondary">
           {copy.help}

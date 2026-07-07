@@ -158,7 +158,7 @@ export default async function StudentLessonPage({
               ) : null}
 
               {lesson.content ? (
-                <div className="prose prose-sm max-w-none text-text-secondary" dangerouslySetInnerHTML={{ __html: lesson.content }} />
+                <div className="prose prose-sm max-w-none whitespace-pre-line text-text-secondary">{lesson.content}</div>
               ) : null}
 
               {lesson.assignment_prompt ? (

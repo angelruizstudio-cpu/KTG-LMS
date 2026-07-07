@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { createSupabaseAdminClient, createSupabaseServerClient, tryCreateSupabaseAdminClient } from "@/lib/supabase/server";
+import { safeNextPath } from "@/lib/utils";
 
 const loginSchema = z.object({
   institutionUserId: z.string().min(3),
@@ -87,14 +88,18 @@ export async function loginAction(formData: FormData) {
     .eq("status", "active")
     .maybeSingle();
 
+  // Use one generic message for every failure path below so an attacker cannot tell whether the
+  // institution ID exists (account enumeration).
+  const invalidCredentials = "/auth/login?error=Check your institution ID and password.";
+
   if (!identity) {
-    redirect("/auth/login?error=Institution ID was not found.");
+    redirect(invalidCredentials);
   }
 
   const { data: profile } = await admin.from("profiles").select("email").eq("id", identity.user_id).single();
 
   if (!profile?.email) {
-    redirect("/auth/login?error=Institution account is incomplete.");
+    redirect(invalidCredentials);
   }
 
   const supabase = await createSupabaseServerClient();
@@ -104,12 +109,12 @@ export async function loginAction(formData: FormData) {
   });
 
   if (error) {
-    redirect("/auth/login?error=Check your institution ID and password.");
+    redirect(invalidCredentials);
   }
 
   await supabase.from("profiles").update({ default_tenant_id: identity.tenant_id }).eq("id", identity.user_id);
 
-  redirect(parsed.data.next ?? "/dashboard");
+  redirect(safeNextPath(parsed.data.next));
 }
 
 export async function registerAction(formData: FormData) {

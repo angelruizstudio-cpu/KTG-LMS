@@ -1,12 +1,15 @@
 import { UserPlus } from "lucide-react";
 
 import { createInstructorAction, updateUserRoleAction } from "@/app/dashboard/admin/users/actions";
+import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import { ConfirmSubmitButton, SubmitButton } from "@/components/ui/submit-button";
 import { requireProfile } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { sanitizeBannerMessage } from "@/lib/utils";
 import type { UserRole } from "@/types/database";
 
 const roleTone: Record<UserRole, "blue" | "green" | "amber"> = {
@@ -39,13 +42,11 @@ export default async function AdminUsersPage({
         <p className="mt-2 text-text-secondary">Create institution users and manage their tenant-specific access IDs.</p>
       </div>
 
-      {params.error ? (
-        <div className="rounded-xl border border-error bg-error-light px-3 py-2 text-sm text-error">{params.error}</div>
-      ) : null}
+      {params.error ? <Alert variant="error">{sanitizeBannerMessage(params.error)}</Alert> : null}
       {params.created ? (
-        <div className="rounded-xl border border-success bg-success-light px-3 py-2 text-sm font-semibold text-success">
-          User created. Institution ID: <span className="font-mono">{params.created}</span>
-        </div>
+        <Alert variant="success" className="font-semibold">
+          User created. Institution ID: <span className="font-mono">{sanitizeBannerMessage(params.created, 40)}</span>
+        </Alert>
       ) : null}
 
       <Card>
@@ -56,20 +57,16 @@ export default async function AdminUsersPage({
           </h2>
         </CardHeader>
         <CardContent>
-          <form action={createInstructorAction} className="grid gap-4 md:grid-cols-[1fr_1fr_1fr_160px_auto] md:items-end">
+          <form action={createInstructorAction} className="grid gap-4 lg:grid-cols-[1fr_1fr_1fr_160px_auto] lg:items-end">
             <Input label="Full name" name="fullName" required />
             <Input label="Email" name="email" type="email" required />
             <Input label="Temporary password" name="password" type="password" minLength={8} required />
-            <select
-              className="h-11 rounded-xl border border-border bg-surface px-3 text-sm font-semibold text-text-primary outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
-              defaultValue="student"
-              name="role"
-            >
+            <Select label="Role" name="role" defaultValue="student">
               <option value="student">Student</option>
               <option value="instructor">Instructor</option>
               <option value="admin">Admin</option>
-            </select>
-            <Button type="submit">Create</Button>
+            </Select>
+            <SubmitButton pendingLabel="Creating…">Create</SubmitButton>
           </form>
         </CardContent>
       </Card>
@@ -105,18 +102,23 @@ export default async function AdminUsersPage({
                     <td className="px-5 py-4">
                       <form action={updateUserRoleAction} className="flex items-center gap-2">
                         <input name="userId" type="hidden" value={user.id} />
-                        <select
-                          className="h-9 rounded-xl border border-border bg-surface px-2 text-sm text-text-primary"
+                        <Select
+                          className="h-9 py-0 font-normal"
+                          srLabel={`Change role for ${user.full_name}`}
                           defaultValue={role}
                           name="role"
                         >
                           <option value="student">Student</option>
                           <option value="instructor">Instructor</option>
                           <option value="admin">Admin</option>
-                        </select>
-                        <Button size="sm" type="submit" variant="secondary">
+                        </Select>
+                        <ConfirmSubmitButton
+                          size="sm"
+                          variant="secondary"
+                          confirmMessage={`Change the role for ${user.full_name}? This affects what they can access.`}
+                        >
                           Save
-                        </Button>
+                        </ConfirmSubmitButton>
                       </form>
                     </td>
                   </tr>
@@ -124,6 +126,11 @@ export default async function AdminUsersPage({
               })}
             </tbody>
           </table>
+          {(users ?? []).length === 0 ? (
+            <p className="px-5 py-10 text-center text-sm text-text-secondary">
+              No users yet. Create your first institution user with the form above.
+            </p>
+          ) : null}
         </CardContent>
       </Card>
     </div>
