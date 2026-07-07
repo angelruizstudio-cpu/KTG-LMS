@@ -8,7 +8,8 @@ import {
   createQuizQuestionAction,
   deleteAnnouncementAction,
   gradeAssignmentSubmissionAction,
-  publishCourseAction
+  publishCourseAction,
+  reactivateEnrollmentAction
 } from "@/app/dashboard/instructor/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -30,10 +31,19 @@ type AssignmentSubmissionWithProfile = Database["public"]["Tables"]["assignment_
 };
 type EnrollmentWithProfile = {
   id: string;
+  status: string;
   progress_percent: number;
+  last_activity_at: string;
+  dropped_automatically: boolean;
   profiles?: { full_name?: string | null; email?: string | null } | null;
 };
 type AnnouncementRow = Database["public"]["Tables"]["course_announcements"]["Row"];
+
+const AT_RISK_DAYS = 10;
+
+function daysSince(iso: string) {
+  return Math.floor((Date.now() - new Date(iso).getTime()) / (24 * 60 * 60 * 1000));
+}
 
 export default async function InstructorCourseDetailPage({
   params,
@@ -42,7 +52,7 @@ export default async function InstructorCourseDetailPage({
   params: Promise<{ courseId: string }>;
   searchParams: Promise<{ error?: string }>;
 }) {
-  await requireProfile(["instructor", "admin"]);
+  const { profile } = await requireProfile(["instructor", "admin"]);
   const { courseId } = await params;
   const query = await searchParams;
   const supabase = await createSupabaseServerClient();
@@ -385,13 +395,35 @@ export default async function InstructorCourseDetailPage({
             {(enrollments ?? []).length === 0 ? (
               <p className="text-sm text-text-secondary">No students enrolled yet.</p>
             ) : (
-              ((enrollments ?? []) as EnrollmentWithProfile[]).map((enrollment) => (
-                <div key={enrollment.id} className="rounded-xl border border-border p-3">
-                  <p className="font-semibold text-text-primary">{enrollment.profiles?.full_name ?? "Student"}</p>
-                  <p className="text-sm text-text-secondary">{enrollment.profiles?.email}</p>
-                  <p className="mt-2 text-xs font-semibold text-primary-hover">{enrollment.progress_percent}% complete</p>
-                </div>
-              ))
+              ((enrollments ?? []) as EnrollmentWithProfile[]).map((enrollment) => {
+                const inactiveDays = daysSince(enrollment.last_activity_at);
+                const atRisk = enrollment.status === "active" && inactiveDays >= AT_RISK_DAYS;
+
+                return (
+                  <div key={enrollment.id} className="rounded-xl border border-border p-3">
+                    <p className="font-semibold text-text-primary">{enrollment.profiles?.full_name ?? "Student"}</p>
+                    <p className="text-sm text-text-secondary">{enrollment.profiles?.email}</p>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <span className="text-xs font-semibold text-primary-hover">{enrollment.progress_percent}% complete</span>
+                      {enrollment.status === "dropped" ? <Badge tone="amber">dropped</Badge> : null}
+                      {atRisk ? <Badge tone="amber">at risk — {inactiveDays}d inactive</Badge> : null}
+                    </div>
+                    {enrollment.status === "dropped" && enrollment.dropped_automatically && profile.role === "admin" ? (
+                      <form action={reactivateEnrollmentAction} className="mt-3">
+                        <input name="courseId" type="hidden" value={course.id} />
+                        <input name="enrollmentId" type="hidden" value={enrollment.id} />
+                        <ConfirmSubmitButton
+                          size="sm"
+                          variant="secondary"
+                          confirmMessage={`Reactivate ${enrollment.profiles?.full_name ?? "this student"}'s enrollment? This gives them 15/20 fresh days before the next inactivity check.`}
+                        >
+                          Reactivate
+                        </ConfirmSubmitButton>
+                      </form>
+                    ) : null}
+                  </div>
+                );
+              })
             )}
           </CardContent>
         </Card>

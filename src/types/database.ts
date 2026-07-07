@@ -251,6 +251,9 @@ export interface Database {
           progress_percent: number;
           enrolled_at: string;
           completed_at: string | null;
+          last_activity_at: string;
+          inactivity_alert_sent_at: string | null;
+          dropped_automatically: boolean;
         };
         Insert: {
           id?: string;
@@ -259,6 +262,9 @@ export interface Database {
           status?: EnrollmentStatus;
           progress_percent?: number;
           completed_at?: string | null;
+          last_activity_at?: string;
+          inactivity_alert_sent_at?: string | null;
+          dropped_automatically?: boolean;
         };
         Update: Partial<Database["public"]["Tables"]["enrollments"]["Insert"]>;
       };

@@ -94,8 +94,13 @@ create table public.enrollments (
   progress_percent integer not null default 0 check (progress_percent between 0 and 100),
   enrolled_at timestamptz not null default now(),
   completed_at timestamptz,
+  last_activity_at timestamptz not null default now(),
+  inactivity_alert_sent_at timestamptz,
+  dropped_automatically boolean not null default false,
   unique (course_id, student_id)
 );
+
+create index enrollments_last_activity_at_idx on public.enrollments(last_activity_at) where status = 'active';
 
 create table public.lesson_progress (
   id uuid primary key default gen_random_uuid(),

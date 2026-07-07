@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { requireProfile } from "@/lib/auth";
+import { escapeHtml, renderEmail, sendEmail } from "@/lib/email";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { slugify } from "@/lib/utils";
 
@@ -67,6 +68,11 @@ const announcementSchema = z.object({
   courseId: z.string().uuid(),
   title: z.string().min(2),
   body: z.string().min(2)
+});
+
+const reactivateEnrollmentSchema = z.object({
+  courseId: z.string().uuid(),
+  enrollmentId: z.string().uuid()
 });
 
 const deleteAnnouncementSchema = z.object({
@@ -345,6 +351,27 @@ export async function gradeAssignmentSubmissionAction(formData: FormData) {
     redirect(`${targetPath}?error=${encodeURIComponent(gradeError.message)}`);
   }
 
+  const [{ data: course }, { data: student }] = await Promise.all([
+    supabase.from("courses").select("title").eq("id", parsed.data.courseId).maybeSingle(),
+    supabase.from("profiles").select("email,full_name").eq("id", parsed.data.studentId).maybeSingle()
+  ]);
+
+  if (student?.email) {
+    const courseTitle = escapeHtml(course?.title ?? "your course");
+    await sendEmail({
+      to: student.email,
+      subject: `New grade posted${course?.title ? `: ${course.title}` : ""}`,
+      html: renderEmail({
+        heading: "New grade posted",
+        body: `<p>Hi ${escapeHtml(student.full_name ?? "there")},</p><p><strong>${escapeHtml(
+          parsed.data.itemName
+        )}</strong> in ${courseTitle} has been graded: ${parsed.data.score}/${parsed.data.maxScore}.${
+          parsed.data.feedback ? ` Feedback: ${escapeHtml(parsed.data.feedback)}` : ""
+        }</p>`
+      })
+    });
+  }
+
   revalidatePath(`/dashboard/instructor/courses/${parsed.data.courseId}`);
   revalidatePath("/dashboard/instructor/gradebook");
   if (parsed.data.returnTo === "gradebook") {
@@ -378,6 +405,38 @@ export async function createAnnouncementAction(formData: FormData) {
 
   revalidatePath(`/dashboard/instructor/courses/${parsed.data.courseId}`);
   revalidatePath(`/dashboard/student/courses/${parsed.data.courseId}`);
+}
+
+export async function reactivateEnrollmentAction(formData: FormData) {
+  // Admin-only: reversing an automatic inactivity withdrawal is a judgment call about whether the
+  // student had a valid reason (illness, etc.), not something an instructor should do unilaterally.
+  await requireProfile(["admin"]);
+  const parsed = reactivateEnrollmentSchema.safeParse({
+    courseId: formData.get("courseId"),
+    enrollmentId: formData.get("enrollmentId")
+  });
+
+  if (!parsed.success) {
+    redirect(`/dashboard/instructor/courses/${String(formData.get("courseId"))}?error=Unable to reactivate enrollment.`);
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase
+    .from("enrollments")
+    .update({
+      status: "active",
+      dropped_automatically: false,
+      last_activity_at: new Date().toISOString(),
+      inactivity_alert_sent_at: null
+    })
+    .eq("id", parsed.data.enrollmentId)
+    .eq("dropped_automatically", true);
+
+  if (error) {
+    redirect(`/dashboard/instructor/courses/${parsed.data.courseId}?error=${encodeURIComponent(error.message)}`);
+  }
+
+  revalidatePath(`/dashboard/instructor/courses/${parsed.data.courseId}`);
 }
 
 export async function deleteAnnouncementAction(formData: FormData) {

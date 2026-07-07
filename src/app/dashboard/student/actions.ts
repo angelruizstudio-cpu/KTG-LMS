@@ -4,7 +4,22 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { requireProfile } from "@/lib/auth";
+import { escapeHtml, renderEmail, sendEmail } from "@/lib/email";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
+
+/**
+ * Mark a student as active in a course "just now", for the Phase 3 inactivity job (15-day alert /
+ * 20-day auto-drop). Clears a previously-sent alert so a student who resumes work stops being
+ * flagged. Uses the service role because students can no longer update their own enrollments row
+ * directly (see security finding H2).
+ */
+async function touchEnrollmentActivity(admin: ReturnType<typeof createSupabaseAdminClient>, courseId: string, studentId: string) {
+  await admin
+    .from("enrollments")
+    .update({ last_activity_at: new Date().toISOString(), inactivity_alert_sent_at: null })
+    .eq("course_id", courseId)
+    .eq("student_id", studentId);
+}
 
 export async function submitAssignmentAction(formData: FormData) {
   const { profile } = await requireProfile(["student", "admin"]);
@@ -28,6 +43,8 @@ export async function submitAssignmentAction(formData: FormData) {
     },
     { onConflict: "lesson_id,student_id" }
   );
+
+  await touchEnrollmentActivity(createSupabaseAdminClient(), courseId, profile.id);
 
   revalidatePath(`/dashboard/student/courses/${courseId}`);
 }
@@ -82,7 +99,9 @@ export async function markLessonCompleteAction(formData: FormData) {
     .update({
       progress_percent: progressPercent,
       status: completed ? "completed" : "active",
-      completed_at: completed ? new Date().toISOString() : null
+      completed_at: completed ? new Date().toISOString() : null,
+      last_activity_at: new Date().toISOString(),
+      inactivity_alert_sent_at: null
     })
     .eq("course_id", courseId)
     .eq("student_id", profile.id);
@@ -158,6 +177,8 @@ export async function submitQuizAction(formData: FormData) {
     feedback: percent >= quiz.passing_score ? "Passed" : "Review the lesson and try again."
   });
 
+  await touchEnrollmentActivity(admin, courseId, profile.id);
+
   revalidatePath(`/dashboard/student/courses/${courseId}`);
 }
 
@@ -207,7 +228,7 @@ async function issueEligibleProgramCertificates(studentId: string) {
     const completedAllRequiredCourses = requiredCourseIds.every((courseId) => completedCourseIds.has(courseId));
 
     if (completedAllRequiredCourses) {
-      await supabase.from("program_certificates").upsert(
+      const { error: certificateError } = await supabase.from("program_certificates").upsert(
         {
           program_id: programId,
           student_id: studentId,
@@ -215,6 +236,27 @@ async function issueEligibleProgramCertificates(studentId: string) {
         },
         { onConflict: "program_id,student_id" }
       );
+
+      if (!certificateError) {
+        const [{ data: program }, { data: student }] = await Promise.all([
+          supabase.from("programs").select("name").eq("id", programId).maybeSingle(),
+          supabase.from("profiles").select("email,full_name").eq("id", studentId).maybeSingle()
+        ]);
+
+        if (student?.email) {
+          const programName = escapeHtml(program?.name ?? "your program");
+          await sendEmail({
+            to: student.email,
+            subject: `Certificate issued: ${program?.name ?? "your program"}`,
+            html: renderEmail({
+              heading: "Certificate issued",
+              body: `<p>Congratulations ${escapeHtml(
+                student.full_name ?? ""
+              )}! Your certificate for <strong>${programName}</strong> has been issued. You can view and print it from your student dashboard.</p>`
+            })
+          });
+        }
+      }
     }
   }
 }
