@@ -140,7 +140,7 @@ export async function addCourseToProgramAction(formData: FormData) {
 }
 
 export async function assignStudentToProgramAction(formData: FormData) {
-  await requireProfile(["admin"]);
+  await requireProfile(["admin", "registrar"]);
   const back = programReturnPath(formData);
   const parsed = programEnrollmentSchema.safeParse({
     programId: formData.get("programId"),
@@ -213,7 +213,7 @@ export async function addPrerequisiteAction(formData: FormData) {
 }
 
 export async function grantCourseAccessAction(formData: FormData) {
-  await requireProfile(["admin"]);
+  await requireProfile(["admin", "registrar"]);
   const back = programReturnPath(formData);
   const parsed = courseAccessSchema.safeParse({
     courseId: formData.get("courseId"),
@@ -313,7 +313,7 @@ async function notifyCourseAccessGranted(
 }
 
 export async function grantEligibleProgramAccessAction(formData: FormData) {
-  await requireProfile(["admin"]);
+  await requireProfile(["admin", "registrar"]);
   const back = programReturnPath(formData);
   const parsed = eligibleProgramAccessSchema.safeParse({
     programId: formData.get("programId"),

@@ -1,8 +1,16 @@
-import { Archive, ArrowLeft, Award, BookOpenCheck, RotateCcw, Trophy } from "lucide-react";
+import { Archive, ArrowLeft, ArrowRightLeft, Award, BookOpenCheck, RotateCcw, Trophy, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { archiveStudentAction, unarchiveStudentAction, updateAcademicStatusAction, updateStudentContactAction } from "@/app/dashboard/registrar/students/actions";
+import { assignStudentToProgramAction, grantCourseAccessAction } from "@/app/dashboard/admin/programs/actions";
+import {
+  archiveStudentAction,
+  transferEnrollmentAction,
+  unarchiveStudentAction,
+  updateAcademicStatusAction,
+  updateStudentContactAction,
+  withdrawFromCourseAction
+} from "@/app/dashboard/registrar/students/actions";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -24,6 +32,7 @@ const statusTone: Record<AcademicStatus, "blue" | "green" | "amber" | "slate"> =
 
 type EnrollmentWithCourse = {
   id: string;
+  course_id: string;
   status: string;
   progress_percent: number;
   enrolled_at: string;
@@ -64,32 +73,36 @@ export default async function RegistrarStudentDetailPage({
     notFound();
   }
 
-  const [{ data: identity }, { data: enrollments }, { data: gradebookEntries }, { data: certificates }] = await Promise.all([
-    supabase
-      .from("tenant_user_identities")
-      .select("institution_user_id")
-      .eq("tenant_id", profile.default_tenant_id)
-      .eq("user_id", studentId)
-      .maybeSingle(),
-    supabase
-      .from("enrollments")
-      .select("id,status,progress_percent,enrolled_at,completed_at,courses(title)")
-      .eq("student_id", studentId)
-      .order("enrolled_at", { ascending: false }),
-    supabase
-      .from("gradebook_entries")
-      .select("id,item_name,score,max_score,feedback,created_at,courses(title)")
-      .eq("student_id", studentId)
-      .order("created_at", { ascending: false })
-      .limit(20),
-    supabase
-      .from("program_certificates")
-      .select("id,certificate_number,issued_at,programs(name)")
-      .eq("student_id", studentId)
-      .order("issued_at", { ascending: false })
-  ]);
+  const [{ data: identity }, { data: enrollments }, { data: gradebookEntries }, { data: certificates }, { data: programs }, { data: courses }] =
+    await Promise.all([
+      supabase
+        .from("tenant_user_identities")
+        .select("institution_user_id")
+        .eq("tenant_id", profile.default_tenant_id)
+        .eq("user_id", studentId)
+        .maybeSingle(),
+      supabase
+        .from("enrollments")
+        .select("id,course_id,status,progress_percent,enrolled_at,completed_at,courses(title)")
+        .eq("student_id", studentId)
+        .order("enrolled_at", { ascending: false }),
+      supabase
+        .from("gradebook_entries")
+        .select("id,item_name,score,max_score,feedback,created_at,courses(title)")
+        .eq("student_id", studentId)
+        .order("created_at", { ascending: false })
+        .limit(20),
+      supabase
+        .from("program_certificates")
+        .select("id,certificate_number,issued_at,programs(name)")
+        .eq("student_id", studentId)
+        .order("issued_at", { ascending: false }),
+      supabase.from("programs").select("id,name").eq("tenant_id", profile.default_tenant_id).order("name"),
+      supabase.from("courses").select("id,title").eq("tenant_id", profile.default_tenant_id).order("title")
+    ]);
 
   const isArchived = Boolean(student.archived_at);
+  const returnTo = `/dashboard/registrar/students/${studentId}`;
 
   return (
     <div className="grid gap-6">
@@ -172,6 +185,52 @@ export default async function RegistrarStudentDetailPage({
       <Card>
         <CardHeader>
           <h2 className="flex items-center gap-2 font-semibold text-text-primary">
+            <UserPlus size={18} />
+            Enroll in program or course
+          </h2>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-2">
+          <form action={assignStudentToProgramAction} className="grid gap-3">
+            <input name="studentId" type="hidden" value={student.id} />
+            <input name="redirectTo" type="hidden" value={returnTo} />
+            <Select label="Assign to program" name="programId" required defaultValue="">
+              <option value="" disabled>
+                {(programs ?? []).length ? "Select a program…" : "No programs yet"}
+              </option>
+              {(programs ?? []).map((program) => (
+                <option key={program.id} value={program.id}>
+                  {program.name}
+                </option>
+              ))}
+            </Select>
+            <SubmitButton className="w-fit" size="sm" pendingLabel="Assigning…">
+              Assign to program
+            </SubmitButton>
+          </form>
+
+          <form action={grantCourseAccessAction} className="grid gap-3">
+            <input name="studentId" type="hidden" value={student.id} />
+            <input name="redirectTo" type="hidden" value={returnTo} />
+            <Select label="Grant a single course" name="courseId" required defaultValue="">
+              <option value="" disabled>
+                {(courses ?? []).length ? "Select a course…" : "No courses yet"}
+              </option>
+              {(courses ?? []).map((course) => (
+                <option key={course.id} value={course.id}>
+                  {course.title}
+                </option>
+              ))}
+            </Select>
+            <SubmitButton className="w-fit" size="sm" pendingLabel="Granting…">
+              Grant access
+            </SubmitButton>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <h2 className="flex items-center gap-2 font-semibold text-text-primary">
             <BookOpenCheck size={18} />
             Course enrollment history
           </h2>
@@ -181,17 +240,54 @@ export default async function RegistrarStudentDetailPage({
             <p className="py-4 text-center text-sm text-text-secondary">No course enrollments yet.</p>
           ) : (
             ((enrollments ?? []) as EnrollmentWithCourse[]).map((enrollment) => (
-              <div key={enrollment.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-background p-3 text-sm">
-                <div>
-                  <p className="font-semibold text-text-primary">{enrollment.courses?.title ?? "Course"}</p>
-                  <p className="mt-1 text-xs text-text-secondary">Enrolled {formatDateTime(enrollment.enrolled_at)}</p>
+              <div key={enrollment.id} className="grid gap-3 rounded-xl border border-border bg-background p-3 text-sm">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="font-semibold text-text-primary">{enrollment.courses?.title ?? "Course"}</p>
+                    <p className="mt-1 text-xs text-text-secondary">Enrolled {formatDateTime(enrollment.enrolled_at)}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-text-secondary">{enrollment.progress_percent}%</span>
+                    <Badge tone={enrollment.status === "completed" ? "green" : enrollment.status === "dropped" ? "amber" : "blue"}>
+                      {enrollment.status}
+                    </Badge>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold text-text-secondary">{enrollment.progress_percent}%</span>
-                  <Badge tone={enrollment.status === "completed" ? "green" : enrollment.status === "dropped" ? "amber" : "blue"}>
-                    {enrollment.status}
-                  </Badge>
-                </div>
+                {enrollment.status === "active" ? (
+                  <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">
+                    <form action={withdrawFromCourseAction}>
+                      <input name="studentId" type="hidden" value={student.id} />
+                      <input name="enrollmentId" type="hidden" value={enrollment.id} />
+                      <ConfirmSubmitButton
+                        size="sm"
+                        variant="secondary"
+                        confirmMessage={`Withdraw ${student.full_name} from ${enrollment.courses?.title ?? "this course"}?`}
+                      >
+                        Withdraw
+                      </ConfirmSubmitButton>
+                    </form>
+                    <form action={transferEnrollmentAction} className="flex flex-wrap items-center gap-2">
+                      <input name="studentId" type="hidden" value={student.id} />
+                      <input name="fromEnrollmentId" type="hidden" value={enrollment.id} />
+                      <Select srLabel={`Transfer ${student.full_name} to another course`} name="toCourseId" required defaultValue="" className="h-9 py-0">
+                        <option value="" disabled>
+                          Transfer to…
+                        </option>
+                        {(courses ?? [])
+                          .filter((course) => course.id !== enrollment.course_id)
+                          .map((course) => (
+                            <option key={course.id} value={course.id}>
+                              {course.title}
+                            </option>
+                          ))}
+                      </Select>
+                      <SubmitButton size="sm" variant="secondary" pendingLabel="Transferring…">
+                        <ArrowRightLeft size={14} />
+                        Transfer
+                      </SubmitButton>
+                    </form>
+                  </div>
+                ) : null}
               </div>
             ))
           )}
