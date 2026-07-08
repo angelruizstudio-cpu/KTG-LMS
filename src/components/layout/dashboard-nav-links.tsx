@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, CreditCard, LayoutDashboard, Settings, Trophy, UsersRound } from "lucide-react";
+import { BookOpen, CreditCard, FileSpreadsheet, LayoutDashboard, Settings, Trophy, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -10,6 +10,7 @@ const iconMap = {
   book: BookOpen,
   creditCard: CreditCard,
   dashboard: LayoutDashboard,
+  reports: FileSpreadsheet,
   settings: Settings,
   trophy: Trophy,
   users: UsersRound

@@ -34,7 +34,8 @@ const navByRole: Record<UserRole, Array<{ href: string; labelKey: string; iconKe
   ],
   registrar: [
     { href: "/dashboard/registrar", labelKey: "registrarOverview", iconKey: "dashboard" },
-    { href: "/dashboard/registrar/students", labelKey: "registrarStudents", iconKey: "users" }
+    { href: "/dashboard/registrar/students", labelKey: "registrarStudents", iconKey: "users" },
+    { href: "/dashboard/registrar/reports", labelKey: "registrarReports", iconKey: "reports" }
   ]
 };
 
