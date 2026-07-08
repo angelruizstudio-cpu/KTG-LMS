@@ -19,7 +19,7 @@ import { Select } from "@/components/ui/select";
 import { ConfirmSubmitButton, SubmitButton } from "@/components/ui/submit-button";
 import { requireProfile } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { formatDateTime, sanitizeBannerMessage } from "@/lib/utils";
+import { calculateGpa, formatDateTime, sanitizeBannerMessage } from "@/lib/utils";
 import type { AcademicStatus } from "@/types/database";
 
 const statusTone: Record<AcademicStatus, "blue" | "green" | "amber" | "slate"> = {
@@ -101,23 +101,41 @@ export default async function RegistrarStudentDetailPage({
       supabase.from("courses").select("id,title").eq("tenant_id", profile.default_tenant_id).order("title")
     ]);
 
+  // GPA is computed from every graded item, not just the 20 most recent shown below.
+  const { data: allGradebookEntries } = await supabase.from("gradebook_entries").select("score,max_score").eq("student_id", studentId);
+  const gpaValue = calculateGpa(allGradebookEntries ?? []);
+
   const isArchived = Boolean(student.archived_at);
   const returnTo = `/dashboard/registrar/students/${studentId}`;
 
   return (
     <div className="grid gap-6">
-      <div>
-        <Link href="/dashboard/registrar/students" className="inline-flex items-center gap-1 text-sm font-semibold text-text-secondary hover:text-primary-hover">
-          <ArrowLeft size={16} /> All students
-        </Link>
-        <div className="mt-3 flex flex-wrap items-center gap-3">
-          <h1 className="text-3xl font-bold text-text-primary">{student.full_name}</h1>
-          <Badge tone={statusTone[student.academic_status as AcademicStatus]}>{student.academic_status}</Badge>
-          {isArchived ? <Badge tone="slate">archived</Badge> : null}
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+        <div>
+          <Link href="/dashboard/registrar/students" className="inline-flex items-center gap-1 text-sm font-semibold text-text-secondary hover:text-primary-hover">
+            <ArrowLeft size={16} /> All students
+          </Link>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <h1 className="text-3xl font-bold text-text-primary">{student.full_name}</h1>
+            <Badge tone={statusTone[student.academic_status as AcademicStatus]}>{student.academic_status}</Badge>
+            {isArchived ? <Badge tone="slate">archived</Badge> : null}
+          </div>
+          <p className="mt-2 text-text-secondary">
+            {student.email} · <span className="font-mono">{identity?.institution_user_id ?? "Institution ID not issued"}</span>
+            {gpaValue !== null ? (
+              <>
+                {" "}
+                · GPA <span className="font-semibold text-text-primary">{gpaValue.toFixed(2)}</span>
+              </>
+            ) : null}
+          </p>
         </div>
-        <p className="mt-2 text-text-secondary">
-          {student.email} · <span className="font-mono">{identity?.institution_user_id ?? "Institution ID not issued"}</span>
-        </p>
+        <Link
+          href={`/dashboard/registrar/students/${studentId}/transcript`}
+          className="inline-flex h-10 items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-text-inverse shadow-glow transition hover:bg-primary-hover"
+        >
+          View transcript
+        </Link>
       </div>
 
       {query.error ? <Alert variant="error">{sanitizeBannerMessage(query.error)}</Alert> : null}

@@ -70,6 +70,30 @@ export function isOverdue(dueAt: string | null, completed: boolean) {
   return Boolean(dueAt) && !completed && new Date(dueAt as string).getTime() < Date.now();
 }
 
+/**
+ * Maps a percentage score to a 4.0-scale grade point. There is no configurable institutional
+ * grading scale in this product yet — this is a standard, fixed mapping used only to compute the
+ * GPA shown on a student's record/transcript.
+ */
+export function gradePoint(percent: number) {
+  if (percent >= 90) return 4.0;
+  if (percent >= 80) return 3.0;
+  if (percent >= 70) return 2.0;
+  if (percent >= 60) return 1.0;
+  return 0.0;
+}
+
+/** Weighted-average GPA from a list of {score, max_score} gradebook entries. Returns null if empty. */
+export function calculateGpa(entries: Array<{ score: number; max_score: number }>): number | null {
+  const validEntries = entries.filter((entry) => entry.max_score > 0);
+  if (!validEntries.length) {
+    return null;
+  }
+
+  const totalPoints = validEntries.reduce((sum, entry) => sum + gradePoint((entry.score / entry.max_score) * 100), 0);
+  return totalPoints / validEntries.length;
+}
+
 export function initials(name: string) {
   return name
     .split(" ")
