@@ -1,6 +1,6 @@
 import { env } from "@/lib/env";
 
-const DEFAULT_FROM = "Dosis Educa <notificaciones@dosiseduca.com>";
+const DEFAULT_FROM = "Dosis Educa <notificaciones@kingdomtechgroup.org>";
 
 export type SendEmailInput = {
   to: string | string[];
