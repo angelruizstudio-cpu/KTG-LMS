@@ -18,6 +18,7 @@ export interface Database {
           academic_status: AcademicStatus;
           default_tenant_id: string;
           avatar_url: string | null;
+          archived_at: string | null;
           created_at: string;
         };
         Insert: {
@@ -28,6 +29,7 @@ export interface Database {
           academic_status?: AcademicStatus;
           default_tenant_id: string;
           avatar_url?: string | null;
+          archived_at?: string | null;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["profiles"]["Insert"]>;

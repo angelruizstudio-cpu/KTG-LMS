@@ -32,7 +32,10 @@ const navByRole: Record<UserRole, Array<{ href: string; labelKey: string; iconKe
     { href: "/dashboard/student/catalog", labelKey: "programCourses", iconKey: "book" },
     { href: "/dashboard/student/certificates", labelKey: "certificates", iconKey: "trophy" }
   ],
-  registrar: [{ href: "/dashboard/registrar", labelKey: "registrarOverview", iconKey: "dashboard" }]
+  registrar: [
+    { href: "/dashboard/registrar", labelKey: "registrarOverview", iconKey: "dashboard" },
+    { href: "/dashboard/registrar/students", labelKey: "registrarStudents", iconKey: "users" }
+  ]
 };
 
 function navLabel(labelKey: string, t: Awaited<ReturnType<typeof getDictionary>>["t"]) {
