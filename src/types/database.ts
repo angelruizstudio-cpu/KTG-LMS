@@ -469,6 +469,26 @@ export interface Database {
         };
         Update: Partial<Database["public"]["Tables"]["course_announcements"]["Insert"]>;
       };
+      student_communications: {
+        Row: {
+          id: string;
+          student_id: string;
+          sent_by: string;
+          subject: string;
+          body: string;
+          delivered: boolean;
+          sent_at: string;
+        };
+        Insert: {
+          id?: string;
+          student_id: string;
+          sent_by: string;
+          subject: string;
+          body: string;
+          delivered?: boolean;
+        };
+        Update: Partial<Database["public"]["Tables"]["student_communications"]["Insert"]>;
+      };
     };
     Views: Record<string, never>;
     Functions: {
