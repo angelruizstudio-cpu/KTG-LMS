@@ -13,6 +13,7 @@ create table public.profiles (
   role public.user_role not null default 'student',
   academic_status public.academic_status not null default 'active',
   avatar_url text,
+  archived_at timestamptz,
   created_at timestamptz not null default now()
 );
 
