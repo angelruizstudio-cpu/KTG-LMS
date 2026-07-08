@@ -1,15 +1,17 @@
 create extension if not exists "pgcrypto";
 
-create type public.user_role as enum ('admin', 'instructor', 'student');
+create type public.user_role as enum ('admin', 'instructor', 'student', 'registrar');
 create type public.course_status as enum ('draft', 'published', 'archived');
 create type public.lesson_type as enum ('video', 'pdf', 'text', 'assignment', 'quiz');
 create type public.enrollment_status as enum ('active', 'completed', 'dropped');
+create type public.academic_status as enum ('active', 'inactive', 'withdrawn', 'graduated', 'suspended');
 
 create table public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   email text not null unique,
   full_name text not null,
   role public.user_role not null default 'student',
+  academic_status public.academic_status not null default 'active',
   avatar_url text,
   created_at timestamptz not null default now()
 );
@@ -787,6 +789,14 @@ language sql
 stable
 as $$
   select public.current_role() = 'admin'
+$$;
+
+create or replace function public.is_registrar()
+returns boolean
+language sql
+stable
+as $$
+  select public.current_role() = 'registrar'
 $$;
 
 create or replace function public.is_instructor_for_course(course_uuid uuid)
@@ -1573,5 +1583,127 @@ with check (
     select 1 from public.platform_admins
     where platform_admins.user_id = auth.uid()
       and platform_admins.status = 'active'
+  )
+);
+
+-- Registrar role (see supabase/migrations/015_registrar_foundation.sql for the rationale).
+-- Additive policies: they grant the registrar role access without touching existing
+-- admin/instructor/student policies. Deliberately no policy is added for finance_clearances.
+
+create policy "Tenant registrars view profiles"
+on public.profiles for select
+using (
+  public.is_registrar()
+  and exists (
+    select 1
+    from public.tenant_memberships
+    where tenant_memberships.user_id = profiles.id
+      and tenant_memberships.tenant_id = public.current_tenant_id()
+      and tenant_memberships.status = 'active'
+  )
+);
+
+create policy "Tenant registrars update student profiles"
+on public.profiles for update
+using (
+  public.is_registrar()
+  and role = 'student'
+  and exists (
+    select 1
+    from public.tenant_memberships
+    where tenant_memberships.user_id = profiles.id
+      and tenant_memberships.tenant_id = public.current_tenant_id()
+      and tenant_memberships.status = 'active'
+  )
+)
+with check (role = 'student');
+
+create policy "Tenant registrars manage enrollments"
+on public.enrollments for all
+using (
+  public.is_registrar()
+  and exists (
+    select 1 from public.courses
+    where courses.id = enrollments.course_id
+      and courses.tenant_id = public.current_tenant_id()
+  )
+)
+with check (
+  public.is_registrar()
+  and exists (
+    select 1 from public.courses
+    where courses.id = enrollments.course_id
+      and courses.tenant_id = public.current_tenant_id()
+  )
+);
+
+create policy "Tenant registrars manage program enrollments"
+on public.program_enrollments for all
+using (
+  public.is_registrar()
+  and exists (
+    select 1 from public.programs
+    where programs.id = program_enrollments.program_id
+      and programs.tenant_id = public.current_tenant_id()
+  )
+)
+with check (
+  public.is_registrar()
+  and exists (
+    select 1 from public.programs
+    where programs.id = program_enrollments.program_id
+      and programs.tenant_id = public.current_tenant_id()
+  )
+);
+
+create policy "Tenant registrars view certificates"
+on public.certificates for select
+using (
+  public.is_registrar()
+  and exists (
+    select 1 from public.courses
+    where courses.id = certificates.course_id
+      and courses.tenant_id = public.current_tenant_id()
+  )
+);
+
+create policy "Tenant registrars view program certificates"
+on public.program_certificates for select
+using (
+  public.is_registrar()
+  and exists (
+    select 1 from public.programs
+    where programs.id = program_certificates.program_id
+      and programs.tenant_id = public.current_tenant_id()
+  )
+);
+
+create policy "Tenant registrars view gradebook"
+on public.gradebook_entries for select
+using (
+  public.is_registrar()
+  and exists (
+    select 1 from public.courses
+    where courses.id = gradebook_entries.course_id
+      and courses.tenant_id = public.current_tenant_id()
+  )
+);
+
+create policy "Tenant registrars manage announcements"
+on public.course_announcements for all
+using (
+  public.is_registrar()
+  and exists (
+    select 1 from public.courses
+    where courses.id = course_announcements.course_id
+      and courses.tenant_id = public.current_tenant_id()
+  )
+)
+with check (
+  public.is_registrar()
+  and exists (
+    select 1 from public.courses
+    where courses.id = course_announcements.course_id
+      and courses.tenant_id = public.current_tenant_id()
   )
 );

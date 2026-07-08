@@ -11,7 +11,7 @@ export async function addTenantMemberAction(formData: FormData) {
   const { profile } = await requireProfile(["admin"]);
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const role = String(formData.get("role") ?? "student") as UserRole;
-  const allowedRoles: UserRole[] = ["admin", "instructor", "student"];
+  const allowedRoles: UserRole[] = ["admin", "instructor", "student", "registrar"];
 
   if (!email || !allowedRoles.includes(role)) {
     redirect("/dashboard/admin/settings?error=Valid email and role are required.");
