@@ -94,6 +94,24 @@ export function calculateGpa(entries: Array<{ score: number; max_score: number }
   return totalPoints / validEntries.length;
 }
 
+/**
+ * Build CSV text from an array of row objects, given an ordered list of [header, key] columns.
+ * Values are stringified and quoted when they contain a comma, quote, or newline (quotes doubled
+ * per RFC 4180), so exported names/notes with commas don't corrupt the column structure.
+ */
+export function toCsv<T>(rows: T[], columns: Array<[header: string, key: (row: T) => string | number]>): string {
+  const escapeCell = (value: string) => {
+    if (/[",\n]/.test(value)) {
+      return `"${value.replace(/"/g, '""')}"`;
+    }
+    return value;
+  };
+
+  const header = columns.map(([label]) => escapeCell(label)).join(",");
+  const lines = rows.map((row) => columns.map(([, key]) => escapeCell(String(key(row)))).join(","));
+  return [header, ...lines].join("\r\n");
+}
+
 export function initials(name: string) {
   return name
     .split(" ")
