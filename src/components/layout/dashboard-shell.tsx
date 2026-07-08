@@ -31,7 +31,8 @@ const navByRole: Record<UserRole, Array<{ href: string; labelKey: string; iconKe
     { href: "/dashboard/student", labelKey: "myLearning", iconKey: "dashboard" },
     { href: "/dashboard/student/catalog", labelKey: "programCourses", iconKey: "book" },
     { href: "/dashboard/student/certificates", labelKey: "certificates", iconKey: "trophy" }
-  ]
+  ],
+  registrar: [{ href: "/dashboard/registrar", labelKey: "registrarOverview", iconKey: "dashboard" }]
 };
 
 function navLabel(labelKey: string, t: Awaited<ReturnType<typeof getDictionary>>["t"]) {
@@ -47,7 +48,8 @@ function roleLabel(role: UserRole, t: Awaited<ReturnType<typeof getDictionary>>[
   const roleLabels = {
     admin: t.dashboard.profileRoleAdmin,
     instructor: t.dashboard.profileRoleInstructor,
-    student: t.dashboard.profileRoleStudent
+    student: t.dashboard.profileRoleStudent,
+    registrar: t.dashboard.profileRoleRegistrar
   };
 
   return roleLabels[role];

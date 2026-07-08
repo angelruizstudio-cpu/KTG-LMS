@@ -14,12 +14,12 @@ const userSchema = z.object({
   fullName: z.string().min(2),
   email: z.string().email(),
   password: z.string().min(8),
-  role: z.enum(["admin", "instructor", "student"])
+  role: z.enum(["admin", "instructor", "student", "registrar"])
 });
 
 const roleSchema = z.object({
   userId: z.string().uuid(),
-  role: z.enum(["admin", "instructor", "student"])
+  role: z.enum(["admin", "instructor", "student", "registrar"])
 });
 
 type NewInstitutionUser = {
@@ -163,7 +163,7 @@ export async function updateUserRoleAction(formData: FormData) {
 const bulkRowSchema = z.object({
   fullName: z.string().min(2),
   email: z.string().email(),
-  role: z.enum(["admin", "instructor", "student"]).default("student"),
+  role: z.enum(["admin", "instructor", "student", "registrar"]).default("student"),
   password: z.string().min(8).optional()
 });
 

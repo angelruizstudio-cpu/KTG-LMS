@@ -15,10 +15,11 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { sanitizeBannerMessage } from "@/lib/utils";
 import type { UserRole } from "@/types/database";
 
-const roleTone: Record<UserRole, "blue" | "green" | "amber"> = {
+const roleTone: Record<UserRole, "blue" | "green" | "amber" | "pink"> = {
   admin: "amber",
   instructor: "blue",
-  student: "green"
+  student: "green",
+  registrar: "pink"
 };
 
 const PAGE_SIZE = 20;
@@ -87,6 +88,7 @@ export default async function AdminUsersPage({
             <Select label="Role" name="role" defaultValue="student">
               <option value="student">Student</option>
               <option value="instructor">Instructor</option>
+              <option value="registrar">Registrar</option>
               <option value="admin">Admin</option>
             </Select>
             <SubmitButton pendingLabel="Creating…">Create</SubmitButton>
@@ -150,6 +152,7 @@ export default async function AdminUsersPage({
                         >
                           <option value="student">Student</option>
                           <option value="instructor">Instructor</option>
+                          <option value="registrar">Registrar</option>
                           <option value="admin">Admin</option>
                         </Select>
                         <ConfirmSubmitButton

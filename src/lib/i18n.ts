@@ -93,10 +93,12 @@ export const dictionary = {
     dashboard: {
       adminOverview: "Overview",
       instructorOverview: "Overview",
+      registrarOverview: "Overview",
       myLearning: "My learning",
       profileRoleAdmin: "Admin",
       profileRoleInstructor: "Instructor",
       profileRoleStudent: "Student",
+      profileRoleRegistrar: "Registrar",
       status: {
         active: "active",
         completed: "completed",
@@ -234,10 +236,12 @@ export const dictionary = {
     dashboard: {
       adminOverview: "Resumen",
       instructorOverview: "Resumen",
+      registrarOverview: "Resumen",
       myLearning: "Mi aprendizaje",
       profileRoleAdmin: "Admin",
       profileRoleInstructor: "Instructor",
       profileRoleStudent: "Estudiante",
+      profileRoleRegistrar: "Registrador",
       status: {
         active: "activo",
         completed: "completado",
@@ -373,10 +377,12 @@ export const dictionary = {
     dashboard: {
       adminOverview: "概览",
       instructorOverview: "概览",
+      registrarOverview: "概览",
       myLearning: "我的学习",
       profileRoleAdmin: "管理员",
       profileRoleInstructor: "教师",
       profileRoleStudent: "学生",
+      profileRoleRegistrar: "教务",
       status: {
         active: "进行中",
         completed: "已完成",

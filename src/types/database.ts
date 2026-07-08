@@ -1,7 +1,8 @@
-export type UserRole = "admin" | "instructor" | "student";
+export type UserRole = "admin" | "instructor" | "student" | "registrar";
 export type CourseStatus = "draft" | "published" | "archived";
 export type LessonType = "video" | "pdf" | "text" | "assignment" | "quiz";
 export type EnrollmentStatus = "active" | "completed" | "dropped";
+export type AcademicStatus = "active" | "inactive" | "withdrawn" | "graduated" | "suspended";
 
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
@@ -14,6 +15,7 @@ export interface Database {
           email: string;
           full_name: string;
           role: UserRole;
+          academic_status: AcademicStatus;
           default_tenant_id: string;
           avatar_url: string | null;
           created_at: string;
@@ -23,6 +25,7 @@ export interface Database {
           email: string;
           full_name: string;
           role?: UserRole;
+          academic_status?: AcademicStatus;
           default_tenant_id: string;
           avatar_url?: string | null;
           created_at?: string;
