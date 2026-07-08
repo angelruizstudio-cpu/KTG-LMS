@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { requireProfile } from "@/lib/auth";
+import { escapeHtml, renderEmail, sendEmail } from "@/lib/email";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
 import { safeNextPath, slugify } from "@/lib/utils";
 
@@ -278,8 +279,37 @@ export async function grantCourseAccessAction(formData: FormData) {
     redirect(withQuery(back, "error", error.message));
   }
 
+  await notifyCourseAccessGranted(supabase, parsed.data.courseId, parsed.data.studentId);
+
   revalidatePath(back);
   redirect(back);
+}
+
+/** Best-effort email to the student when a course is opened for them. Never blocks the action. */
+async function notifyCourseAccessGranted(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  courseId: string,
+  studentId: string
+) {
+  const [{ data: course }, { data: student }] = await Promise.all([
+    supabase.from("courses").select("title").eq("id", courseId).maybeSingle(),
+    supabase.from("profiles").select("email,full_name").eq("id", studentId).maybeSingle()
+  ]);
+
+  if (!student?.email || !course?.title) {
+    return;
+  }
+
+  await sendEmail({
+    to: student.email,
+    subject: `Course access granted: ${course.title}`,
+    html: renderEmail({
+      heading: "New course access",
+      body: `<p>Hi ${escapeHtml(student.full_name ?? "there")},</p><p>You now have access to <strong>${escapeHtml(
+        course.title
+      )}</strong>. Log in to your student dashboard to get started.</p>`
+    })
+  });
 }
 
 export async function grantEligibleProgramAccessAction(formData: FormData) {
@@ -354,6 +384,10 @@ export async function grantEligibleProgramAccessAction(formData: FormData) {
 
   if (error) {
     redirect(withQuery(back, "error", error.message));
+  }
+
+  for (const eligibleCourseId of eligibleCourseIds) {
+    await notifyCourseAccessGranted(supabase, eligibleCourseId, parsed.data.studentId);
   }
 
   revalidatePath(back);
@@ -469,6 +503,27 @@ async function issueProgramCertificateIfEligible(programId: string, studentId: s
     },
     { onConflict: "program_id,student_id" }
   );
+
+  if (!error) {
+    const [{ data: program }, { data: student }] = await Promise.all([
+      supabase.from("programs").select("name").eq("id", programId).maybeSingle(),
+      supabase.from("profiles").select("email,full_name").eq("id", studentId).maybeSingle()
+    ]);
+
+    if (student?.email) {
+      const programName = escapeHtml(program?.name ?? "your program");
+      await sendEmail({
+        to: student.email,
+        subject: `Certificate issued: ${program?.name ?? "your program"}`,
+        html: renderEmail({
+          heading: "Certificate issued",
+          body: `<p>Congratulations ${escapeHtml(
+            student.full_name ?? ""
+          )}! Your certificate for <strong>${programName}</strong> has been issued. You can view and print it from your student dashboard.</p>`
+        })
+      });
+    }
+  }
 
   return !error;
 }

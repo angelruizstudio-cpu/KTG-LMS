@@ -1,0 +1,20 @@
+name: Daily inactivity check
+
+on:
+  schedule:
+    # 09:00 UTC daily
+    - cron: "0 9 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call inactivity-check endpoint
+        run: |
+          curl --fail --silent --show-error \
+            -X POST "${APP_URL}/api/cron/inactivity-check" \
+            -H "x-cron-secret: ${CRON_SECRET}"
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
