@@ -266,11 +266,18 @@ export async function grantCourseAccessAction(formData: FormData) {
     }
   }
 
+  // Auto-assign to the course's only section (the common case right after a course is created,
+  // since every course gets one by default). When a course has multiple sections, leave section_id
+  // unset — staff assign the student to a specific section afterward from the course's Sections card.
+  const { data: courseSections } = await supabase.from("course_sections").select("id").eq("course_id", parsed.data.courseId);
+  const soleSectionId = courseSections?.length === 1 ? courseSections[0].id : null;
+
   const { error } = await supabase.from("enrollments").upsert(
     {
       course_id: parsed.data.courseId,
       student_id: parsed.data.studentId,
-      status: "active"
+      status: "active",
+      section_id: soleSectionId
     },
     { onConflict: "course_id,student_id" }
   );

@@ -224,11 +224,17 @@ export async function transferEnrollmentAction(formData: FormData) {
     redirect(`/dashboard/registrar/students/${parsed.data.studentId}?error=${encodeURIComponent(withdrawError.message)}`);
   }
 
+  // Auto-assign to the target course's only section when it has exactly one (see the same logic
+  // in grantCourseAccessAction). Multi-section courses require a manual reassignment afterward.
+  const { data: courseSections } = await supabase.from("course_sections").select("id").eq("course_id", parsed.data.toCourseId);
+  const soleSectionId = courseSections?.length === 1 ? courseSections[0].id : null;
+
   const { error: grantError } = await supabase.from("enrollments").upsert(
     {
       course_id: parsed.data.toCourseId,
       student_id: parsed.data.studentId,
-      status: "active"
+      status: "active",
+      section_id: soleSectionId
     },
     { onConflict: "course_id,student_id" }
   );
