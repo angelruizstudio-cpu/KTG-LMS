@@ -31,6 +31,21 @@ create table public.courses (
   updated_at timestamptz not null default now()
 );
 
+-- Course sections (see supabase/migrations/019_course_sections.sql for the rationale). Table
+-- placed here since it only depends on courses/profiles, both already defined; its RLS policies
+-- and the is_section_instructor() helper are added later, once current_tenant_id()/is_admin() exist.
+create table public.course_sections (
+  id uuid primary key default gen_random_uuid(),
+  course_id uuid not null references public.courses(id) on delete cascade,
+  instructor_id uuid not null references public.profiles(id) on delete restrict,
+  name text not null,
+  capacity integer check (capacity is null or capacity > 0),
+  created_at timestamptz not null default now(),
+  unique (course_id, name)
+);
+
+create index course_sections_course_id_idx on public.course_sections(course_id);
+
 create table public.programs (
   id uuid primary key default gen_random_uuid(),
   name text not null,
@@ -100,10 +115,12 @@ create table public.enrollments (
   last_activity_at timestamptz not null default now(),
   inactivity_alert_sent_at timestamptz,
   dropped_automatically boolean not null default false,
+  section_id uuid references public.course_sections(id) on delete set null,
   unique (course_id, student_id)
 );
 
 create index enrollments_last_activity_at_idx on public.enrollments(last_activity_at) where status = 'active';
+create index enrollments_section_id_idx on public.enrollments(section_id);
 
 create table public.lesson_progress (
   id uuid primary key default gen_random_uuid(),
@@ -317,6 +334,7 @@ alter table public.finance_clearances enable row level security;
 alter table public.program_certificates enable row level security;
 alter table public.course_announcements enable row level security;
 alter table public.student_communications enable row level security;
+alter table public.course_sections enable row level security;
 
 create policy "Profiles are viewable by self, instructors, and admins"
 on public.profiles for select
@@ -862,6 +880,23 @@ as $$
     where id = course_uuid
       and tenant_id = public.current_tenant_id()
       and (created_by = auth.uid() or public.is_admin())
+  )
+$$;
+
+create or replace function public.is_section_instructor(section_uuid uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.course_sections
+    join public.courses on courses.id = course_sections.course_id
+    where course_sections.id = section_uuid
+      and courses.tenant_id = public.current_tenant_id()
+      and (course_sections.instructor_id = auth.uid() or public.is_admin())
   )
 $$;
 
@@ -1803,3 +1838,93 @@ create policy "Tenant admins manage academic terms"
 on public.academic_terms for all
 using (public.is_admin() and tenant_id = public.current_tenant_id())
 with check (public.is_admin() and tenant_id = public.current_tenant_id());
+
+-- Course sections policies (table defined earlier, alongside courses — see comment there).
+create policy "Tenant members view course sections"
+on public.course_sections for select
+using (
+  exists (
+    select 1
+    from public.courses
+    where courses.id = course_sections.course_id
+      and courses.tenant_id = public.current_tenant_id()
+  )
+);
+
+create policy "Course owners manage sections"
+on public.course_sections for all
+using (
+  exists (
+    select 1
+    from public.courses
+    where courses.id = course_sections.course_id
+      and courses.tenant_id = public.current_tenant_id()
+      and public.is_instructor_for_course(course_sections.course_id)
+  )
+)
+with check (
+  exists (
+    select 1
+    from public.courses
+    where courses.id = course_sections.course_id
+      and courses.tenant_id = public.current_tenant_id()
+      and public.is_instructor_for_course(course_sections.course_id)
+  )
+);
+
+-- Additive: a section instructor (who may not be the course's overall owner) can see the roster
+-- of their own section, without being granted the course owner's full enrollments access.
+create policy "Section instructors view their section roster"
+on public.enrollments for select
+using (section_id is not null and public.is_section_instructor(section_id));
+
+-- Additive: a section instructor can grade only the students enrolled in their own section.
+create policy "Section instructors manage their section gradebook"
+on public.gradebook_entries for all
+using (
+  exists (
+    select 1
+    from public.enrollments
+    where enrollments.course_id = gradebook_entries.course_id
+      and enrollments.student_id = gradebook_entries.student_id
+      and enrollments.section_id is not null
+      and public.is_section_instructor(enrollments.section_id)
+  )
+)
+with check (
+  exists (
+    select 1
+    from public.enrollments
+    where enrollments.course_id = gradebook_entries.course_id
+      and enrollments.student_id = gradebook_entries.student_id
+      and enrollments.section_id is not null
+      and public.is_section_instructor(enrollments.section_id)
+  )
+);
+
+-- Additive: a section instructor may grade assignment submissions from their own section's
+-- students (same join shape as the existing "Instructors grade assignments" course-owner policy).
+create policy "Section instructors grade their section assignments"
+on public.assignment_submissions for update
+using (
+  exists (
+    select 1
+    from public.lessons
+    join public.course_modules on course_modules.id = lessons.module_id
+    join public.enrollments on enrollments.course_id = course_modules.course_id and enrollments.student_id = assignment_submissions.student_id
+    where lessons.id = assignment_submissions.lesson_id
+      and enrollments.section_id is not null
+      and public.is_section_instructor(enrollments.section_id)
+  )
+)
+with check (
+  exists (
+    select 1
+    from public.lessons
+    join public.course_modules on course_modules.id = lessons.module_id
+    join public.enrollments on enrollments.course_id = course_modules.course_id and enrollments.student_id = assignment_submissions.student_id
+    where lessons.id = assignment_submissions.lesson_id
+      and enrollments.section_id is not null
+      and public.is_section_instructor(enrollments.section_id)
+  )
+);

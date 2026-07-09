@@ -17,6 +17,13 @@ const courseSchema = z.object({
   stripePriceId: z.string().optional()
 });
 
+const sectionSchema = z.object({
+  courseId: z.string().uuid(),
+  name: z.string().min(1),
+  instructorEmail: z.string().email(),
+  capacity: z.coerce.number().int().min(1).optional()
+});
+
 const moduleSchema = z.object({
   courseId: z.string().uuid(),
   title: z.string().min(2),
@@ -126,6 +133,52 @@ export async function publishCourseAction(formData: FormData) {
   const supabase = await createSupabaseServerClient();
   await supabase.from("courses").update({ status: "published" }).eq("id", courseId);
   revalidatePath(`/dashboard/instructor/courses/${courseId}`);
+}
+
+export async function createSectionAction(formData: FormData) {
+  const { profile } = await requireProfile(["instructor", "admin"]);
+  const parsed = sectionSchema.safeParse({
+    courseId: formData.get("courseId"),
+    name: formData.get("name"),
+    instructorEmail: formData.get("instructorEmail"),
+    capacity: formData.get("capacity") || undefined
+  });
+
+  if (!parsed.success) {
+    redirect(`/dashboard/instructor/courses/${String(formData.get("courseId"))}?error=Section details are invalid.`);
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { data: sectionInstructor } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("email", parsed.data.instructorEmail)
+    .eq("default_tenant_id", profile.default_tenant_id)
+    .in("role", ["instructor", "admin"])
+    .maybeSingle();
+
+  if (!sectionInstructor) {
+    redirect(
+      `/dashboard/instructor/courses/${parsed.data.courseId}?error=${encodeURIComponent(
+        "No instructor with that email was found in this institution."
+      )}`
+    );
+  }
+
+  // RLS ("Course owners manage sections") enforces that only the course's owning instructor or
+  // an admin may actually create a section — a non-owner instructor's request is rejected here.
+  const { error } = await supabase.from("course_sections").insert({
+    course_id: parsed.data.courseId,
+    instructor_id: sectionInstructor.id,
+    name: parsed.data.name,
+    capacity: parsed.data.capacity ?? null
+  });
+
+  if (error) {
+    redirect(`/dashboard/instructor/courses/${parsed.data.courseId}?error=${encodeURIComponent(error.message)}`);
+  }
+
+  revalidatePath(`/dashboard/instructor/courses/${parsed.data.courseId}`);
 }
 
 export async function createModuleAction(formData: FormData) {

@@ -279,6 +279,7 @@ export interface Database {
           last_activity_at: string;
           inactivity_alert_sent_at: string | null;
           dropped_automatically: boolean;
+          section_id: string | null;
         };
         Insert: {
           id?: string;
@@ -290,8 +291,27 @@ export interface Database {
           last_activity_at?: string;
           inactivity_alert_sent_at?: string | null;
           dropped_automatically?: boolean;
+          section_id?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["enrollments"]["Insert"]>;
+      };
+      course_sections: {
+        Row: {
+          id: string;
+          course_id: string;
+          instructor_id: string;
+          name: string;
+          capacity: number | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          course_id: string;
+          instructor_id: string;
+          name: string;
+          capacity?: number | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["course_sections"]["Insert"]>;
       };
       lesson_progress: {
         Row: {
