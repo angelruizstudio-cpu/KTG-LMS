@@ -1,6 +1,7 @@
 import { Megaphone, FileQuestion, FileText, PlayCircle, Trash2, UploadCloud, UsersRound } from "lucide-react";
 
 import {
+  assignEnrollmentSectionAction,
   createAnnouncementAction,
   createLessonAction,
   createModuleAction,
@@ -16,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { ConfirmSubmitButton, SubmitButton } from "@/components/ui/submit-button";
 import { Textarea } from "@/components/ui/textarea";
 import { requireProfile } from "@/lib/auth";
@@ -463,6 +465,7 @@ export default async function InstructorCourseDetailPage({
                 const inactiveDays = daysSince(enrollment.last_activity_at);
                 const atRisk = enrollment.status === "active" && inactiveDays >= AT_RISK_DAYS;
                 const section = ((sections ?? []) as SectionWithInstructor[]).find((s) => s.id === enrollment.section_id);
+                const allSections = (sections ?? []) as SectionWithInstructor[];
 
                 return (
                   <div key={enrollment.id} className="rounded-xl border border-border p-3">
@@ -474,6 +477,25 @@ export default async function InstructorCourseDetailPage({
                       {enrollment.status === "dropped" ? <Badge tone="amber">dropped</Badge> : null}
                       {atRisk ? <Badge tone="amber">at risk — {inactiveDays}d inactive</Badge> : null}
                     </div>
+                    {isOwner && allSections.length > 1 ? (
+                      <form action={assignEnrollmentSectionAction} className="mt-3 flex flex-wrap items-end gap-2">
+                        <input name="courseId" type="hidden" value={course.id} />
+                        <input name="enrollmentId" type="hidden" value={enrollment.id} />
+                        <Select name="sectionId" srLabel="Section" defaultValue={enrollment.section_id ?? ""}>
+                          <option value="" disabled>
+                            Select a section
+                          </option>
+                          {allSections.map((s) => (
+                            <option key={s.id} value={s.id}>
+                              {s.name}
+                            </option>
+                          ))}
+                        </Select>
+                        <SubmitButton size="sm" variant="secondary">
+                          Move
+                        </SubmitButton>
+                      </form>
+                    ) : null}
                     {enrollment.status === "dropped" && enrollment.dropped_automatically && profile.role === "admin" ? (
                       <form action={reactivateEnrollmentAction} className="mt-3">
                         <input name="courseId" type="hidden" value={course.id} />

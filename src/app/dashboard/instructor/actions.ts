@@ -24,6 +24,12 @@ const sectionSchema = z.object({
   capacity: z.coerce.number().int().min(1).optional()
 });
 
+const assignEnrollmentSectionSchema = z.object({
+  courseId: z.string().uuid(),
+  enrollmentId: z.string().uuid(),
+  sectionId: z.string().uuid()
+});
+
 const moduleSchema = z.object({
   courseId: z.string().uuid(),
   title: z.string().min(2),
@@ -173,6 +179,39 @@ export async function createSectionAction(formData: FormData) {
     name: parsed.data.name,
     capacity: parsed.data.capacity ?? null
   });
+
+  if (error) {
+    redirect(`/dashboard/instructor/courses/${parsed.data.courseId}?error=${encodeURIComponent(error.message)}`);
+  }
+
+  revalidatePath(`/dashboard/instructor/courses/${parsed.data.courseId}`);
+}
+
+/**
+ * Moves a student's enrollment to a specific section — the manual-reassignment fast-follow noted
+ * in the course-sections PR, for courses with more than one section. RLS ("Tenant instructors
+ * update enrollments") enforces that only the course's owning instructor or an admin may actually
+ * move a student between sections; a section instructor cannot reassign students out of/into their
+ * own section.
+ */
+export async function assignEnrollmentSectionAction(formData: FormData) {
+  await requireProfile(["instructor", "admin"]);
+  const parsed = assignEnrollmentSectionSchema.safeParse({
+    courseId: formData.get("courseId"),
+    enrollmentId: formData.get("enrollmentId"),
+    sectionId: formData.get("sectionId")
+  });
+
+  if (!parsed.success) {
+    redirect(`/dashboard/instructor/courses/${String(formData.get("courseId"))}?error=Unable to reassign section.`);
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase
+    .from("enrollments")
+    .update({ section_id: parsed.data.sectionId })
+    .eq("id", parsed.data.enrollmentId)
+    .eq("course_id", parsed.data.courseId);
 
   if (error) {
     redirect(`/dashboard/instructor/courses/${parsed.data.courseId}?error=${encodeURIComponent(error.message)}`);
