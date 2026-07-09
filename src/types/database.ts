@@ -117,6 +117,7 @@ export interface Database {
           status: CourseStatus;
           price_cents: number;
           stripe_price_id: string | null;
+          academic_term_id: string;
           created_by: string;
           created_at: string;
           updated_at: string;
@@ -131,9 +132,28 @@ export interface Database {
           status?: CourseStatus;
           price_cents?: number;
           stripe_price_id?: string | null;
+          academic_term_id: string;
           created_by: string;
         };
         Update: Partial<Database["public"]["Tables"]["courses"]["Insert"]>;
+      };
+      academic_terms: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          name: string;
+          start_date: string | null;
+          end_date: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          name: string;
+          start_date?: string | null;
+          end_date?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["academic_terms"]["Insert"]>;
       };
       programs: {
         Row: {

@@ -699,6 +699,42 @@ alter column tenant_id set not null;
 alter table public.programs
 alter column tenant_id set not null;
 
+-- Academic terms (see supabase/migrations/018_academic_terms.sql for the rationale). Placed here,
+-- after tenants/courses.tenant_id exist, rather than at the top with the original courses table.
+create table public.academic_terms (
+  id uuid primary key default gen_random_uuid(),
+  tenant_id uuid not null references public.tenants(id) on delete cascade,
+  name text not null,
+  start_date date,
+  end_date date,
+  created_at timestamptz not null default now(),
+  unique (tenant_id, name),
+  check (start_date is null or end_date is null or end_date >= start_date)
+);
+
+alter table public.courses add column if not exists academic_term_id uuid references public.academic_terms(id) on delete restrict;
+
+insert into public.academic_terms (tenant_id, name, start_date, end_date)
+select distinct tenant_id, 'General', null, null
+from public.courses
+on conflict (tenant_id, name) do nothing;
+
+update public.courses
+set academic_term_id = academic_terms.id
+from public.academic_terms
+where courses.academic_term_id is null
+  and courses.tenant_id = academic_terms.tenant_id
+  and academic_terms.name = 'General';
+
+alter table public.courses alter column academic_term_id set not null;
+
+create index courses_academic_term_id_idx on public.courses(academic_term_id);
+
+alter table public.academic_terms enable row level security;
+-- Policies for academic_terms are created further below, once tenant_memberships, is_admin(),
+-- and current_tenant_id() all exist (this table is defined earlier so courses.academic_term_id
+-- can reference it right after courses gets its tenant_id).
+
 create table if not exists public.tenant_memberships (
   id uuid primary key default gen_random_uuid(),
   tenant_id uuid not null references public.tenants(id) on delete cascade,
@@ -1749,3 +1785,21 @@ with check (
       and tenant_memberships.status = 'active'
   )
 );
+
+-- Academic terms policies (table defined earlier, alongside courses.tenant_id — see comment there).
+create policy "Tenant members view academic terms"
+on public.academic_terms for select
+using (
+  exists (
+    select 1
+    from public.tenant_memberships
+    where tenant_memberships.user_id = auth.uid()
+      and tenant_memberships.tenant_id = academic_terms.tenant_id
+      and tenant_memberships.status = 'active'
+  )
+);
+
+create policy "Tenant admins manage academic terms"
+on public.academic_terms for all
+using (public.is_admin() and tenant_id = public.current_tenant_id())
+with check (public.is_admin() and tenant_id = public.current_tenant_id());

@@ -19,6 +19,7 @@ const navByRole: Record<UserRole, Array<{ href: string; labelKey: string; iconKe
     { href: "/dashboard/admin/users", labelKey: "users", iconKey: "users" },
     { href: "/dashboard/admin/programs", labelKey: "programs", iconKey: "book" },
     { href: "/dashboard/admin/courses", labelKey: "courses", iconKey: "book" },
+    { href: "/dashboard/admin/terms", labelKey: "adminTerms", iconKey: "calendar" },
     { href: "/dashboard/admin/finance", labelKey: "finance", iconKey: "creditCard" },
     { href: "/dashboard/admin/settings", labelKey: "settings", iconKey: "settings" }
   ],

@@ -65,6 +65,11 @@ export function formatDateTime(value: string) {
 
 export const formatDueDate = formatDateTime;
 
+/** Formats a date-only value (e.g. a `date` column like academic_terms.start_date) without a time. */
+export function formatDate(value: string) {
+  return new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeZone: "UTC" }).format(new Date(value));
+}
+
 /** Whether a due date has passed. Returns false for completed items or lessons with no due date. */
 export function isOverdue(dueAt: string | null, completed: boolean) {
   return Boolean(dueAt) && !completed && new Date(dueAt as string).getTime() < Date.now();
