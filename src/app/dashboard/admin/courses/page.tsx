@@ -12,6 +12,7 @@ type AdminCourse = {
   title: string;
   status: "draft" | "published" | "archived";
   profiles?: { full_name?: string | null; email?: string | null } | null;
+  academic_terms?: { name?: string | null } | null;
 };
 
 const PAGE_SIZE = 12;
@@ -31,7 +32,7 @@ export default async function AdminCoursesPage({
 
   let coursesQuery = supabase
     .from("courses")
-    .select("*, profiles:created_by(full_name,email)", { count: "exact" })
+    .select("*, profiles:created_by(full_name,email), academic_terms(name)", { count: "exact" })
     .order("updated_at", { ascending: false })
     .range(from, from + PAGE_SIZE - 1);
 
@@ -70,6 +71,11 @@ export default async function AdminCoursesPage({
                     </div>
                     <Badge tone={course.status === "published" ? "green" : "amber"}>{course.status}</Badge>
                   </div>
+                  {course.academic_terms?.name ? (
+                    <Badge className="mt-3" tone="blue">
+                      {course.academic_terms.name}
+                    </Badge>
+                  ) : null}
                 </CardContent>
               </Card>
             </Link>

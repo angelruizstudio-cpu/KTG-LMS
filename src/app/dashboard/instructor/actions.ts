@@ -12,6 +12,7 @@ import { slugify } from "@/lib/utils";
 const courseSchema = z.object({
   title: z.string().min(3),
   description: z.string().min(10),
+  academicTermId: z.string().uuid(),
   priceCents: z.coerce.number().min(0).default(0),
   stripePriceId: z.string().optional()
 });
@@ -85,12 +86,13 @@ export async function createCourseAction(formData: FormData) {
   const parsed = courseSchema.safeParse({
     title: formData.get("title"),
     description: formData.get("description"),
+    academicTermId: formData.get("academicTermId"),
     priceCents: formData.get("priceCents") || 0,
     stripePriceId: formData.get("stripePriceId") || undefined
   });
 
   if (!parsed.success) {
-    redirect("/dashboard/instructor/courses?error=Course details are invalid.");
+    redirect("/dashboard/instructor/courses?error=Course details are invalid. An academic term is required.");
   }
 
   const supabase = await createSupabaseServerClient();
@@ -101,6 +103,7 @@ export async function createCourseAction(formData: FormData) {
       title: parsed.data.title,
       slug: `${slugify(parsed.data.title)}-${Date.now().toString(36)}`,
       description: parsed.data.description,
+      academic_term_id: parsed.data.academicTermId,
       price_cents: parsed.data.priceCents,
       stripe_price_id: parsed.data.stripePriceId || null,
       status: "draft",
