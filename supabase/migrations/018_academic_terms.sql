@@ -23,7 +23,7 @@ alter table public.courses add column if not exists academic_term_id uuid refere
 -- Backfill: one "General" term per tenant that already has courses, with no fixed dates (an
 -- open-ended term for content created before this feature existed).
 insert into public.academic_terms (tenant_id, name, start_date, end_date)
-select distinct tenant_id, 'General', null, null
+select distinct tenant_id, 'General', null::date, null::date
 from public.courses
 where tenant_id is not null
 on conflict (tenant_id, name) do nothing;

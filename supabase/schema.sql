@@ -715,7 +715,7 @@ create table public.academic_terms (
 alter table public.courses add column if not exists academic_term_id uuid references public.academic_terms(id) on delete restrict;
 
 insert into public.academic_terms (tenant_id, name, start_date, end_date)
-select distinct tenant_id, 'General', null, null
+select distinct tenant_id, 'General', null::date, null::date
 from public.courses
 on conflict (tenant_id, name) do nothing;
 
