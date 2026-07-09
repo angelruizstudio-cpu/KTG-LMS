@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { requireProfile } from "@/lib/auth";
+import { escapeHtml, renderEmail, sendEmail } from "@/lib/email";
 import { createInstitutionUser } from "@/lib/institution-user";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -234,6 +235,65 @@ export async function transferEnrollmentAction(formData: FormData) {
 
   if (grantError) {
     redirect(`/dashboard/registrar/students/${parsed.data.studentId}?error=${encodeURIComponent(grantError.message)}`);
+  }
+
+  revalidatePath(`/dashboard/registrar/students/${parsed.data.studentId}`);
+}
+
+const sendMessageSchema = z.object({
+  studentId: z.string().uuid(),
+  subject: z.string().min(2),
+  body: z.string().min(2)
+});
+
+/**
+ * Sends an academic/registration message to the student by email and logs it so staff have a
+ * communication history on the student's record — there is no in-app inbox, email is the delivery
+ * channel (same Resend infrastructure as the Phase 3 notifications).
+ */
+export async function sendStudentMessageAction(formData: FormData) {
+  const { profile } = await requireProfile(["registrar", "admin"]);
+  const parsed = sendMessageSchema.safeParse({
+    studentId: formData.get("studentId"),
+    subject: formData.get("subject"),
+    body: formData.get("body")
+  });
+
+  if (!parsed.success) {
+    redirect(`/dashboard/registrar/students/${String(formData.get("studentId"))}?error=Message details are invalid.`);
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { data: student } = await supabase
+    .from("profiles")
+    .select("email,full_name")
+    .eq("id", parsed.data.studentId)
+    .eq("role", "student")
+    .maybeSingle();
+
+  if (!student?.email) {
+    redirect(`/dashboard/registrar/students/${parsed.data.studentId}?error=Student not found.`);
+  }
+
+  const delivered = await sendEmail({
+    to: student.email,
+    subject: parsed.data.subject,
+    html: renderEmail({
+      heading: escapeHtml(parsed.data.subject),
+      body: `<p>${escapeHtml(parsed.data.body).replace(/\n/g, "<br />")}</p>`
+    })
+  });
+
+  const { error } = await supabase.from("student_communications").insert({
+    student_id: parsed.data.studentId,
+    sent_by: profile.id,
+    subject: parsed.data.subject,
+    body: parsed.data.body,
+    delivered
+  });
+
+  if (error) {
+    redirect(`/dashboard/registrar/students/${parsed.data.studentId}?error=${encodeURIComponent(error.message)}`);
   }
 
   revalidatePath(`/dashboard/registrar/students/${parsed.data.studentId}`);

@@ -1,10 +1,11 @@
-import { Archive, ArrowLeft, ArrowRightLeft, Award, BookOpenCheck, RotateCcw, Trophy, UserPlus } from "lucide-react";
+import { Archive, ArrowLeft, ArrowRightLeft, Award, BookOpenCheck, MessageSquare, RotateCcw, Trophy, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { assignStudentToProgramAction, grantCourseAccessAction } from "@/app/dashboard/admin/programs/actions";
 import {
   archiveStudentAction,
+  sendStudentMessageAction,
   transferEnrollmentAction,
   unarchiveStudentAction,
   updateAcademicStatusAction,
@@ -17,6 +18,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { ConfirmSubmitButton, SubmitButton } from "@/components/ui/submit-button";
+import { Textarea } from "@/components/ui/textarea";
 import { requireProfile } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { calculateGpa, formatDateTime, sanitizeBannerMessage } from "@/lib/utils";
@@ -53,6 +55,14 @@ type CertificateWithProgram = {
   certificate_number: string;
   issued_at: string;
   programs?: { name?: string | null } | null;
+};
+type CommunicationWithSender = {
+  id: string;
+  subject: string;
+  body: string;
+  delivered: boolean;
+  sent_at: string;
+  profiles?: { full_name?: string | null } | null;
 };
 
 export default async function RegistrarStudentDetailPage({
@@ -100,6 +110,12 @@ export default async function RegistrarStudentDetailPage({
       supabase.from("programs").select("id,name").eq("tenant_id", profile.default_tenant_id).order("name"),
       supabase.from("courses").select("id,title").eq("tenant_id", profile.default_tenant_id).order("title")
     ]);
+
+  const { data: communications } = await supabase
+    .from("student_communications")
+    .select("id,subject,body,delivered,sent_at,profiles:sent_by(full_name)")
+    .eq("student_id", studentId)
+    .order("sent_at", { ascending: false });
 
   // GPA is computed from every graded item, not just the 20 most recent shown below.
   const { data: allGradebookEntries } = await supabase.from("gradebook_entries").select("score,max_score").eq("student_id", studentId);
@@ -357,6 +373,49 @@ export default async function RegistrarStudentDetailPage({
                   <p className="mt-1 font-mono text-xs text-text-secondary">{certificate.certificate_number}</p>
                 </div>
                 <span className="text-xs text-text-secondary">{formatDateTime(certificate.issued_at)}</span>
+              </div>
+            ))
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <h2 className="flex items-center gap-2 font-semibold text-text-primary">
+            <MessageSquare size={18} />
+            Send message
+          </h2>
+        </CardHeader>
+        <CardContent>
+          <form action={sendStudentMessageAction} className="grid gap-3">
+            <input name="studentId" type="hidden" value={student.id} />
+            <Input label="Subject" name="subject" required />
+            <Textarea label="Message" name="body" required />
+            <SubmitButton className="w-fit" pendingLabel="Sending…">
+              Send by email
+            </SubmitButton>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <h2 className="font-semibold text-text-primary">Communication history</h2>
+        </CardHeader>
+        <CardContent className="grid gap-2">
+          {((communications ?? []) as CommunicationWithSender[]).length === 0 ? (
+            <p className="py-4 text-center text-sm text-text-secondary">No messages sent yet.</p>
+          ) : (
+            ((communications ?? []) as CommunicationWithSender[]).map((message) => (
+              <div key={message.id} className="rounded-xl border border-border bg-background p-3 text-sm">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="font-semibold text-text-primary">{message.subject}</p>
+                  <Badge tone={message.delivered ? "green" : "amber"}>{message.delivered ? "delivered" : "not delivered"}</Badge>
+                </div>
+                <p className="mt-2 whitespace-pre-line text-text-secondary">{message.body}</p>
+                <p className="mt-2 text-xs text-text-secondary">
+                  {formatDateTime(message.sent_at)} · sent by {message.profiles?.full_name ?? "staff"}
+                </p>
               </div>
             ))
           )}

@@ -209,6 +209,18 @@ create table public.course_announcements (
 
 create index course_announcements_course_id_idx on public.course_announcements(course_id);
 
+create table public.student_communications (
+  id uuid primary key default gen_random_uuid(),
+  student_id uuid not null references public.profiles(id) on delete cascade,
+  sent_by uuid not null references public.profiles(id) on delete cascade,
+  subject text not null,
+  body text not null,
+  delivered boolean not null default false,
+  sent_at timestamptz not null default now()
+);
+
+create index student_communications_student_id_idx on public.student_communications(student_id);
+
 create or replace function public.set_updated_at()
 returns trigger
 language plpgsql
@@ -304,6 +316,7 @@ alter table public.certificates enable row level security;
 alter table public.finance_clearances enable row level security;
 alter table public.program_certificates enable row level security;
 alter table public.course_announcements enable row level security;
+alter table public.student_communications enable row level security;
 
 create policy "Profiles are viewable by self, instructors, and admins"
 on public.profiles for select
@@ -1706,5 +1719,33 @@ with check (
     select 1 from public.courses
     where courses.id = course_announcements.course_id
       and courses.tenant_id = public.current_tenant_id()
+  )
+);
+
+-- Student communications (see supabase/migrations/017_student_communications.sql).
+create policy "Tenant staff view student communications"
+on public.student_communications for select
+using (
+  (public.is_registrar() or public.is_admin())
+  and exists (
+    select 1
+    from public.tenant_memberships
+    where tenant_memberships.user_id = student_communications.student_id
+      and tenant_memberships.tenant_id = public.current_tenant_id()
+      and tenant_memberships.status = 'active'
+  )
+);
+
+create policy "Tenant staff send student communications"
+on public.student_communications for insert
+with check (
+  (public.is_registrar() or public.is_admin())
+  and sent_by = auth.uid()
+  and exists (
+    select 1
+    from public.tenant_memberships
+    where tenant_memberships.user_id = student_communications.student_id
+      and tenant_memberships.tenant_id = public.current_tenant_id()
+      and tenant_memberships.status = 'active'
   )
 );
