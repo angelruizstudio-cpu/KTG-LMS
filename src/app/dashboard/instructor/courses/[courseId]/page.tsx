@@ -1,4 +1,5 @@
-import { Megaphone, FileQuestion, FileText, PlayCircle, Trash2, UploadCloud, UsersRound } from "lucide-react";
+import { Megaphone, FileQuestion, FileText, MessagesSquare, PlayCircle, Trash2, UploadCloud, UsersRound } from "lucide-react";
+import Link from "next/link";
 
 import {
   assignEnrollmentSectionAction,
@@ -130,6 +131,13 @@ export default async function InstructorCourseDetailPage({
           </div>
           <h1 className="text-3xl font-bold text-text-primary">{course.title}</h1>
           <p className="mt-2 max-w-3xl text-text-secondary">{course.description}</p>
+          <Link
+            className="mt-2 inline-flex items-center gap-2 font-semibold text-primary-hover"
+            href={`/dashboard/instructor/courses/${course.id}/discussions`}
+          >
+            <MessagesSquare size={18} />
+            Discussions
+          </Link>
         </div>
         {isOwner ? (
           <form action={publishCourseAction}>

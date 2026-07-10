@@ -509,6 +509,42 @@ export interface Database {
         };
         Update: Partial<Database["public"]["Tables"]["course_announcements"]["Insert"]>;
       };
+      discussion_threads: {
+        Row: {
+          id: string;
+          course_id: string;
+          author_id: string;
+          title: string;
+          body: string;
+          pinned: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          course_id: string;
+          author_id: string;
+          title: string;
+          body: string;
+          pinned?: boolean;
+        };
+        Update: Partial<Database["public"]["Tables"]["discussion_threads"]["Insert"]>;
+      };
+      discussion_replies: {
+        Row: {
+          id: string;
+          thread_id: string;
+          author_id: string;
+          body: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          thread_id: string;
+          author_id: string;
+          body: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["discussion_replies"]["Insert"]>;
+      };
       student_communications: {
         Row: {
           id: string;

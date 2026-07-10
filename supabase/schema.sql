@@ -46,6 +46,31 @@ create table public.course_sections (
 
 create index course_sections_course_id_idx on public.course_sections(course_id);
 
+-- Course discussion boards (see supabase/migrations/020_discussions.sql). Tables placed here since
+-- they only depend on courses/profiles; their RLS policies and is_discussion_course_member() helper
+-- are added later, once current_tenant_id()/is_admin()/is_instructor_for_course()/is_section_instructor() exist.
+create table public.discussion_threads (
+  id uuid primary key default gen_random_uuid(),
+  course_id uuid not null references public.courses(id) on delete cascade,
+  author_id uuid not null references public.profiles(id) on delete cascade,
+  title text not null,
+  body text not null,
+  pinned boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+create index discussion_threads_course_id_idx on public.discussion_threads(course_id);
+
+create table public.discussion_replies (
+  id uuid primary key default gen_random_uuid(),
+  thread_id uuid not null references public.discussion_threads(id) on delete cascade,
+  author_id uuid not null references public.profiles(id) on delete cascade,
+  body text not null,
+  created_at timestamptz not null default now()
+);
+
+create index discussion_replies_thread_id_idx on public.discussion_replies(thread_id);
+
 create table public.programs (
   id uuid primary key default gen_random_uuid(),
   name text not null,
@@ -1926,5 +1951,77 @@ with check (
     where lessons.id = assignment_submissions.lesson_id
       and enrollments.section_id is not null
       and public.is_section_instructor(enrollments.section_id)
+  )
+);
+
+alter table public.discussion_threads enable row level security;
+alter table public.discussion_replies enable row level security;
+
+create or replace function public.is_discussion_course_member(course_uuid uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.enrollments
+    where enrollments.course_id = course_uuid
+      and enrollments.student_id = auth.uid()
+  )
+  or public.is_instructor_for_course(course_uuid)
+  or exists (
+    select 1 from public.course_sections
+    where course_sections.course_id = course_uuid
+      and public.is_section_instructor(course_sections.id)
+  )
+$$;
+
+create policy "Course members view discussion threads"
+on public.discussion_threads for select
+using (public.is_discussion_course_member(course_id));
+
+create policy "Course members start discussion threads"
+on public.discussion_threads for insert
+with check (public.is_discussion_course_member(course_id) and author_id = auth.uid());
+
+create policy "Authors and instructors moderate discussion threads"
+on public.discussion_threads for update
+using (author_id = auth.uid() or public.is_instructor_for_course(course_id))
+with check (author_id = auth.uid() or public.is_instructor_for_course(course_id));
+
+create policy "Authors and instructors delete discussion threads"
+on public.discussion_threads for delete
+using (author_id = auth.uid() or public.is_instructor_for_course(course_id));
+
+create policy "Course members view discussion replies"
+on public.discussion_replies for select
+using (
+  exists (
+    select 1 from public.discussion_threads
+    where discussion_threads.id = discussion_replies.thread_id
+      and public.is_discussion_course_member(discussion_threads.course_id)
+  )
+);
+
+create policy "Course members post discussion replies"
+on public.discussion_replies for insert
+with check (
+  author_id = auth.uid()
+  and exists (
+    select 1 from public.discussion_threads
+    where discussion_threads.id = discussion_replies.thread_id
+      and public.is_discussion_course_member(discussion_threads.course_id)
+  )
+);
+
+create policy "Authors and instructors delete discussion replies"
+on public.discussion_replies for delete
+using (
+  author_id = auth.uid()
+  or exists (
+    select 1 from public.discussion_threads
+    where discussion_threads.id = discussion_replies.thread_id
+      and public.is_instructor_for_course(discussion_threads.course_id)
   )
 );

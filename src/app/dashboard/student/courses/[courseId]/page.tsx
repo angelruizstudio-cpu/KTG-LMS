@@ -1,4 +1,4 @@
-import { CheckCircle2, Clock, FileText, Megaphone, PlayCircle, Trophy, UploadCloud } from "lucide-react";
+import { CheckCircle2, Clock, FileText, Megaphone, MessagesSquare, PlayCircle, Trophy, UploadCloud } from "lucide-react";
 import Link from "next/link";
 
 import { markLessonCompleteAction, submitAssignmentAction, submitQuizAction } from "@/app/dashboard/student/actions";
@@ -84,12 +84,21 @@ export default async function StudentCoursePage({
           <h1 className="text-3xl font-bold text-text-primary">{course.title}</h1>
           <p className="mt-2 max-w-3xl text-text-secondary">{course.description}</p>
         </div>
-        {enrollment.status === "completed" ? (
-          <Link className="inline-flex items-center gap-2 font-semibold text-primary-hover" href="/dashboard/student/certificates">
-            <Trophy size={18} />
-            View certificate
+        <div className="flex flex-col items-end gap-2">
+          <Link
+            className="inline-flex items-center gap-2 font-semibold text-primary-hover"
+            href={`/dashboard/student/courses/${course.id}/discussions`}
+          >
+            <MessagesSquare size={18} />
+            Discussions
           </Link>
-        ) : null}
+          {enrollment.status === "completed" ? (
+            <Link className="inline-flex items-center gap-2 font-semibold text-primary-hover" href="/dashboard/student/certificates">
+              <Trophy size={18} />
+              View certificate
+            </Link>
+          ) : null}
+        </div>
       </div>
 
       {((announcements ?? []) as AnnouncementRow[]).length > 0 ? (
