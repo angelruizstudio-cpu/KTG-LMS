@@ -792,6 +792,24 @@ alter table public.academic_terms enable row level security;
 -- and current_tenant_id() all exist (this table is defined earlier so courses.academic_term_id
 -- can reference it right after courses gets its tenant_id).
 
+-- In-app notifications (see supabase/migrations/022_notifications.sql). Placed here since it only
+-- depends on tenants/profiles; its RLS is added further below where current_tenant_id() exists.
+create table public.notifications (
+  id uuid primary key default gen_random_uuid(),
+  tenant_id uuid not null references public.tenants(id) on delete cascade,
+  recipient_id uuid not null references public.profiles(id) on delete cascade,
+  type text not null,
+  title text not null,
+  body text,
+  link text,
+  read_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create index notifications_recipient_id_idx on public.notifications(recipient_id, created_at desc);
+
+alter table public.notifications enable row level security;
+
 create table if not exists public.tenant_memberships (
   id uuid primary key default gen_random_uuid(),
   tenant_id uuid not null references public.tenants(id) on delete cascade,
@@ -2074,3 +2092,16 @@ with check (
       and public.is_instructor_for_course(course_modules.course_id)
   )
 );
+
+create policy "Tenant members create notifications"
+on public.notifications for insert
+with check (tenant_id = public.current_tenant_id());
+
+create policy "Recipients view their notifications"
+on public.notifications for select
+using (recipient_id = auth.uid());
+
+create policy "Recipients mark their notifications read"
+on public.notifications for update
+using (recipient_id = auth.uid())
+with check (recipient_id = auth.uid());

@@ -1,4 +1,4 @@
-import { LogOut } from "lucide-react";
+import { Bell, LogOut } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -10,6 +10,7 @@ import type { DashboardNavItem } from "@/components/layout/dashboard-nav-links";
 import { TenantSwitcher } from "@/components/layout/tenant-switcher";
 import { Button } from "@/components/ui/button";
 import { getDictionary } from "@/lib/i18n";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { initials } from "@/lib/utils";
 import type { UserRole } from "@/types/database";
 
@@ -81,6 +82,11 @@ export async function DashboardShell({
     iconKey: item.iconKey,
     label: navLabel(item.labelKey, t)
   }));
+  const supabase = await createSupabaseServerClient();
+  const { count: unreadNotifications } = await supabase
+    .from("notifications")
+    .select("id", { count: "exact", head: true })
+    .is("read_at", null);
 
   return (
     <div className="min-h-screen bg-background print:bg-surface">
@@ -100,6 +106,14 @@ export async function DashboardShell({
               <BrandLogo />
             </Link>
             <div className="ml-auto flex items-center gap-4">
+              <Link aria-label="Notifications" className="relative grid size-10 place-items-center rounded-full text-text-secondary transition hover:bg-secondary-light hover:text-text-primary" href="/dashboard/notifications">
+                <Bell size={20} />
+                {unreadNotifications ? (
+                  <span className="absolute right-1.5 top-1.5 grid size-4 place-items-center rounded-full bg-error text-[10px] font-bold text-text-inverse">
+                    {unreadNotifications > 9 ? "9+" : unreadNotifications}
+                  </span>
+                ) : null}
+              </Link>
               <LanguageSwitcher currentPath="/dashboard" language={language} />
               <div className="hidden text-right sm:block">
                 <p className="text-sm font-semibold text-text-primary">{profile.full_name}</p>

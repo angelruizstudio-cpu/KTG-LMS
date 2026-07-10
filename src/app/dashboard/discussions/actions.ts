@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { requireProfile } from "@/lib/auth";
+import { createNotification } from "@/lib/notifications";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { safeNextPath } from "@/lib/utils";
 
@@ -78,6 +79,23 @@ export async function createReplyAction(formData: FormData) {
 
   if (error) {
     redirect(`${returnPath}?error=${encodeURIComponent(error.message)}`);
+  }
+
+  const { data: thread } = await supabase
+    .from("discussion_threads")
+    .select("author_id,title,course_id")
+    .eq("id", parsed.data.threadId)
+    .maybeSingle();
+
+  if (thread && thread.author_id !== profile.id) {
+    await createNotification(supabase, {
+      tenantId: profile.default_tenant_id,
+      recipientId: thread.author_id,
+      type: "discussion_reply",
+      title: `New reply: ${thread.title}`,
+      body: parsed.data.body,
+      link: `${returnPath}`
+    });
   }
 
   revalidatePath(returnPath);
