@@ -1,12 +1,13 @@
 "use client";
 
-import { BookOpen, CalendarRange, CreditCard, FileSpreadsheet, LayoutDashboard, Settings, Trophy, UsersRound } from "lucide-react";
+import { BarChart3, BookOpen, CalendarRange, CreditCard, FileSpreadsheet, LayoutDashboard, Settings, Trophy, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/utils";
 
 const iconMap = {
+  analytics: BarChart3,
   book: BookOpen,
   calendar: CalendarRange,
   creditCard: CreditCard,

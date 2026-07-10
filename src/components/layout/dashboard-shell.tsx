@@ -26,7 +26,8 @@ const navByRole: Record<UserRole, Array<{ href: string; labelKey: string; iconKe
   instructor: [
     { href: "/dashboard/instructor", labelKey: "instructorOverview", iconKey: "dashboard" },
     { href: "/dashboard/instructor/courses", labelKey: "courses", iconKey: "book" },
-    { href: "/dashboard/instructor/gradebook", labelKey: "gradebook", iconKey: "trophy" }
+    { href: "/dashboard/instructor/gradebook", labelKey: "gradebook", iconKey: "trophy" },
+    { href: "/dashboard/instructor/analytics", labelKey: "analytics", iconKey: "analytics" }
   ],
   student: [
     { href: "/dashboard/student", labelKey: "myLearning", iconKey: "dashboard" },
