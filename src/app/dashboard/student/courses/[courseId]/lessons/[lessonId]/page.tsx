@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { requireProfile } from "@/lib/auth";
+import { getDictionary } from "@/lib/i18n";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { formatDueDate, isOverdue } from "@/lib/utils";
 import type { Database } from "@/types/database";
@@ -44,6 +45,8 @@ export default async function StudentLessonPage({
   const { profile } = await requireProfile(["student", "admin"]);
   const { courseId, lessonId } = await params;
   const supabase = await createSupabaseServerClient();
+  const { t } = await getDictionary();
+  const tl = t.dashboard.student.lesson;
 
   const [{ data: course }, { data: enrollment }, { data: modules }] = await Promise.all([
     supabase.from("courses").select("id,title,description").eq("id", courseId).single(),
@@ -55,10 +58,10 @@ export default async function StudentLessonPage({
     return (
       <Card>
         <CardContent className="grid gap-4 text-center">
-          <h1 className="text-xl font-bold text-text-primary">Enrollment required</h1>
-          <p className="text-sm text-text-secondary">An administrator must grant access before you can view this lesson.</p>
+          <h1 className="text-xl font-bold text-text-primary">{tl.enrollmentRequiredTitle}</h1>
+          <p className="text-sm text-text-secondary">{tl.enrollmentRequiredDescription}</p>
           <Link className="font-semibold text-primary-hover" href="/dashboard/student/catalog">
-            View program courses
+            {tl.viewProgramCourses}
           </Link>
         </CardContent>
       </Card>
@@ -85,9 +88,9 @@ export default async function StudentLessonPage({
     return (
       <Card>
         <CardContent className="grid gap-4 text-center">
-          <h1 className="text-xl font-bold text-text-primary">Lesson not found</h1>
+          <h1 className="text-xl font-bold text-text-primary">{tl.lessonNotFoundTitle}</h1>
           <Link className="font-semibold text-primary-hover" href={`/dashboard/student/courses/${course.id}`}>
-            Back to course
+            {tl.backToCourse}
           </Link>
         </CardContent>
       </Card>
@@ -108,7 +111,7 @@ export default async function StudentLessonPage({
     <div className="grid gap-6">
       <Link className="inline-flex items-center gap-2 text-sm font-bold text-text-secondary hover:text-primary-hover" href={`/dashboard/student/courses/${course.id}`}>
         <ChevronLeft size={16} />
-        Back to course
+        {tl.backToCourse}
       </Link>
 
       <section className="grid gap-6 lg:grid-cols-[1fr_320px]">
@@ -116,7 +119,7 @@ export default async function StudentLessonPage({
           <Card>
             <CardContent>
               <div className="flex flex-wrap items-center gap-3">
-                <Badge tone={completed ? "green" : "blue"}>{completed ? "Complete" : "In progress"}</Badge>
+                <Badge tone={completed ? "green" : "blue"}>{completed ? tl.complete : tl.inProgress}</Badge>
                 <Badge>{lesson.lesson_type}</Badge>
                 {lesson.due_at ? (
                   <span
@@ -125,7 +128,7 @@ export default async function StudentLessonPage({
                     }`}
                   >
                     <Clock size={14} />
-                    {isOverdue(lesson.due_at, completed) ? "Overdue — " : "Due "}
+                    {isOverdue(lesson.due_at, completed) ? tl.overdue : tl.due}
                     {formatDueDate(lesson.due_at)}
                   </span>
                 ) : null}
@@ -165,7 +168,7 @@ export default async function StudentLessonPage({
                 signedPdf ? (
                   <iframe className="h-[70vh] w-full rounded-2xl border border-border bg-background" src={signedPdf} title={lesson.title} />
                 ) : (
-                  <div className="rounded-2xl border border-border bg-background p-6 text-sm text-text-secondary">PDF file is temporarily unavailable.</div>
+                  <div className="rounded-2xl border border-border bg-background p-6 text-sm text-text-secondary">{tl.pdfUnavailable}</div>
                 )
               ) : null}
 
@@ -175,7 +178,7 @@ export default async function StudentLessonPage({
 
               {lesson.assignment_prompt ? (
                 <div className="mt-5 rounded-2xl border border-border bg-background p-5">
-                  <p className="font-bold text-text-primary">Assignment</p>
+                  <p className="font-bold text-text-primary">{tl.assignment}</p>
                   <p className="mt-2 whitespace-pre-line text-sm leading-6 text-text-secondary">{lesson.assignment_prompt}</p>
                 </div>
               ) : null}
@@ -186,13 +189,13 @@ export default async function StudentLessonPage({
         <aside className="grid gap-5 lg:sticky lg:top-24 lg:self-start">
           <Card>
             <CardContent>
-              <p className="text-sm font-bold text-text-secondary">Course progress</p>
+              <p className="text-sm font-bold text-text-secondary">{tl.courseProgress}</p>
               <div className="mt-3 h-3 overflow-hidden rounded-full bg-background">
                 <div className="h-full rounded-full bg-primary" style={{ width: `${progressPercent}%` }} />
               </div>
               <p className="mt-3 text-2xl font-black text-text-primary">{progressPercent}%</p>
               <p className="text-sm text-text-secondary">
-                {completedCount} of {orderedLessons.length} lessons completed
+                {completedCount} {tl.lessonsCompletedOf} {orderedLessons.length} {tl.lessonsCompleted}
               </p>
 
               <form action={markLessonCompleteAction} className="mt-5">
@@ -202,10 +205,10 @@ export default async function StudentLessonPage({
                   {completed ? (
                     <>
                       <CheckCircle2 size={18} />
-                      Lesson complete
+                      {tl.lessonComplete}
                     </>
                   ) : (
-                    "Mark as complete"
+                    tl.markAsComplete
                   )}
                 </Button>
               </form>
@@ -221,7 +224,7 @@ export default async function StudentLessonPage({
                 >
                   <span className="inline-flex items-center gap-2">
                     <ArrowLeft size={16} />
-                    Previous
+                    {tl.previous}
                   </span>
                 </Link>
               ) : null}
@@ -230,7 +233,7 @@ export default async function StudentLessonPage({
                   className="inline-flex items-center justify-between rounded-2xl bg-primary px-4 py-3 text-sm font-bold text-text-inverse shadow-glow hover:bg-primary-hover"
                   href={`/dashboard/student/courses/${course.id}/lessons/${nextLesson.id}`}
                 >
-                  Next lesson
+                  {tl.nextLesson}
                   <ArrowRight size={16} />
                 </Link>
               ) : null}

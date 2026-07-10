@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { requireProfile } from "@/lib/auth";
+import { getDictionary } from "@/lib/i18n";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type ProgramCourse = {
@@ -30,6 +31,8 @@ type Prerequisite = {
 export default async function ProgramCoursesPage() {
   const { profile } = await requireProfile(["student", "admin"]);
   const supabase = await createSupabaseServerClient();
+  const { t } = await getDictionary();
+  const tc = t.dashboard.student.catalog;
 
   const [{ data: programEnrollments }, { data: enrollments }] = await Promise.all([
     supabase.from("program_enrollments").select("program_id").eq("student_id", profile.id).eq("status", "active"),
@@ -60,19 +63,15 @@ export default async function ProgramCoursesPage() {
   return (
     <div className="grid gap-6">
       <div>
-        <h1 className="text-3xl font-bold text-text-primary">Program courses</h1>
-        <p className="mt-2 text-text-secondary">
-          Courses appear here based on your program enrollment. Access is granted by the academic team.
-        </p>
+        <h1 className="text-3xl font-bold text-text-primary">{tc.title}</h1>
+        <p className="mt-2 text-text-secondary">{tc.subtitle}</p>
       </div>
 
       {(programCourses ?? []).length === 0 ? (
         <Card>
           <CardContent className="grid gap-3 py-12 text-center">
-            <h2 className="text-lg font-semibold text-text-primary">No program assigned yet</h2>
-            <p className="text-sm text-text-secondary">
-              An administrator will assign you to a program before courses become available.
-            </p>
+            <h2 className="text-lg font-semibold text-text-primary">{tc.noProgramTitle}</h2>
+            <p className="text-sm text-text-secondary">{tc.noProgramDescription}</p>
           </CardContent>
         </Card>
       ) : (
@@ -93,9 +92,9 @@ export default async function ProgramCoursesPage() {
                   <div>
                     <div className="mb-3 flex flex-wrap items-center gap-2">
                       <Badge tone={hasAccess ? "green" : isLocked ? "amber" : "blue"}>
-                        {hasAccess ? "access granted" : isLocked ? "locked" : "pending access"}
+                        {hasAccess ? tc.accessGranted : isLocked ? tc.locked : tc.pendingAccess}
                       </Badge>
-                      <Badge tone="slate">{item.programs?.name ?? "Program"}</Badge>
+                      <Badge tone="slate">{item.programs?.name ?? tc.program}</Badge>
                     </div>
                     <h2 className="text-lg font-bold text-text-primary">{course?.title}</h2>
                     <p className="mt-2 line-clamp-3 text-sm leading-6 text-text-secondary">{course?.description}</p>
@@ -103,9 +102,9 @@ export default async function ProgramCoursesPage() {
 
                   {missingPrerequisites.length ? (
                     <div className="rounded-xl bg-warning-light p-3 text-sm text-text-secondary">
-                      <p className="font-semibold text-text-primary">Prerequisites required</p>
+                      <p className="font-semibold text-text-primary">{tc.prerequisitesRequired}</p>
                       <p className="mt-1">
-                        Complete: {missingPrerequisites.map((prerequisite) => prerequisite.prerequisite?.title).join(", ")}
+                        {tc.complete}: {missingPrerequisites.map((prerequisite) => prerequisite.prerequisite?.title).join(", ")}
                       </p>
                     </div>
                   ) : null}
@@ -115,13 +114,11 @@ export default async function ProgramCoursesPage() {
                       className="mt-auto inline-flex h-10 items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-text-inverse shadow-glow hover:bg-primary-hover"
                       href={`/dashboard/student/courses/${item.course_id}`}
                     >
-                      Continue course
+                      {tc.continueCourse}
                     </Link>
                   ) : (
                     <div className="mt-auto rounded-xl border border-border bg-background p-3 text-sm text-text-secondary">
-                      {isLocked
-                        ? "This course unlocks after prerequisites are completed."
-                        : "This course is in your program. An administrator will grant access when it is available."}
+                      {isLocked ? tc.unlockAfterPrerequisites : tc.waitingForAccess}
                     </div>
                   )}
                 </CardContent>
