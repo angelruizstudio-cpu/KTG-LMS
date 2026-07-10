@@ -545,6 +545,24 @@ export interface Database {
         };
         Update: Partial<Database["public"]["Tables"]["discussion_replies"]["Insert"]>;
       };
+      assignment_rubric_criteria: {
+        Row: {
+          id: string;
+          lesson_id: string;
+          name: string;
+          max_points: number;
+          position: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          lesson_id: string;
+          name: string;
+          max_points: number;
+          position?: number;
+        };
+        Update: Partial<Database["public"]["Tables"]["assignment_rubric_criteria"]["Insert"]>;
+      };
       student_communications: {
         Row: {
           id: string;

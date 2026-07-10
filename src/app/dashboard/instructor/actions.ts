@@ -67,6 +67,19 @@ const quizQuestionSchema = z.object({
   position: z.coerce.number().int().min(1)
 });
 
+const rubricCriterionSchema = z.object({
+  courseId: z.string().uuid(),
+  lessonId: z.string().uuid(),
+  name: z.string().min(1),
+  maxPoints: z.coerce.number().int().min(1),
+  position: z.coerce.number().int().min(0).default(0)
+});
+
+const deleteRubricCriterionSchema = z.object({
+  courseId: z.string().uuid(),
+  criterionId: z.string().uuid()
+});
+
 const gradeAssignmentSchema = z.object({
   courseId: z.string().uuid(),
   submissionId: z.string().uuid(),
@@ -384,6 +397,56 @@ export async function createQuizQuestionAction(formData: FormData) {
     points: parsed.data.points,
     position: parsed.data.position
   });
+
+  if (error) {
+    redirect(`/dashboard/instructor/courses/${parsed.data.courseId}?error=${encodeURIComponent(error.message)}`);
+  }
+
+  revalidatePath(`/dashboard/instructor/courses/${parsed.data.courseId}`);
+}
+
+export async function addRubricCriterionAction(formData: FormData) {
+  await requireProfile(["instructor", "admin"]);
+  const parsed = rubricCriterionSchema.safeParse({
+    courseId: formData.get("courseId"),
+    lessonId: formData.get("lessonId"),
+    name: formData.get("name"),
+    maxPoints: formData.get("maxPoints"),
+    position: formData.get("position") || 0
+  });
+
+  if (!parsed.success) {
+    redirect(`/dashboard/instructor/courses/${String(formData.get("courseId"))}?error=Rubric criterion details are invalid.`);
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.from("assignment_rubric_criteria").insert({
+    lesson_id: parsed.data.lessonId,
+    name: parsed.data.name,
+    max_points: parsed.data.maxPoints,
+    position: parsed.data.position
+  });
+
+  if (error) {
+    redirect(`/dashboard/instructor/courses/${parsed.data.courseId}?error=${encodeURIComponent(error.message)}`);
+  }
+
+  revalidatePath(`/dashboard/instructor/courses/${parsed.data.courseId}`);
+}
+
+export async function deleteRubricCriterionAction(formData: FormData) {
+  await requireProfile(["instructor", "admin"]);
+  const parsed = deleteRubricCriterionSchema.safeParse({
+    courseId: formData.get("courseId"),
+    criterionId: formData.get("criterionId")
+  });
+
+  if (!parsed.success) {
+    redirect(`/dashboard/instructor/courses/${String(formData.get("courseId"))}?error=Unable to delete rubric criterion.`);
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.from("assignment_rubric_criteria").delete().eq("id", parsed.data.criterionId);
 
   if (error) {
     redirect(`/dashboard/instructor/courses/${parsed.data.courseId}?error=${encodeURIComponent(error.message)}`);
