@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { requireProfile } from "@/lib/auth";
+import { getDictionary } from "@/lib/i18n";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type GradebookEntry = {
@@ -48,6 +49,8 @@ export default async function InstructorGradebookPage({
   await requireProfile(["instructor", "admin"]);
   const params = await searchParams;
   const supabase = await createSupabaseServerClient();
+  const { t } = await getDictionary();
+  const tg = t.dashboard.instructor.gradebook;
   const [{ data: entries }, { data: submissions }, { count: enrolledStudents }] = await Promise.all([
     supabase
       .from("gradebook_entries")
@@ -74,8 +77,8 @@ export default async function InstructorGradebookPage({
   return (
     <div className="grid gap-6">
       <div>
-        <h1 className="text-3xl font-bold text-text-primary">Gradebook</h1>
-        <p className="mt-2 text-text-secondary">Review submissions, record grades, and monitor student performance.</p>
+        <h1 className="text-3xl font-bold text-text-primary">{tg.title}</h1>
+        <p className="mt-2 text-text-secondary">{tg.subtitle}</p>
       </div>
 
       {params.error ? (
@@ -84,10 +87,10 @@ export default async function InstructorGradebookPage({
 
       <div className="grid gap-4 md:grid-cols-4">
         {[
-          { label: "Students", value: enrolledStudents ?? 0, Icon: UsersRound, tone: "text-secondary" },
-          { label: "Pending review", value: pendingSubmissions.length, Icon: Inbox, tone: "text-warning" },
-          { label: "Grades posted", value: gradeEntries.length, Icon: ClipboardCheck, tone: "text-success" },
-          { label: "Average score", value: `${averageScore}%`, Icon: Trophy, tone: "text-primary-hover" }
+          { label: tg.students, value: enrolledStudents ?? 0, Icon: UsersRound, tone: "text-secondary" },
+          { label: tg.pendingReview, value: pendingSubmissions.length, Icon: Inbox, tone: "text-warning" },
+          { label: tg.gradesPosted, value: gradeEntries.length, Icon: ClipboardCheck, tone: "text-success" },
+          { label: tg.averageScore, value: `${averageScore}%`, Icon: Trophy, tone: "text-primary-hover" }
         ].map(({ Icon, label, tone, value }) => (
           <Card key={label}>
             <CardContent className="flex items-center justify-between">
@@ -106,11 +109,11 @@ export default async function InstructorGradebookPage({
           <CardHeader>
             <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
               <div>
-                <h2 className="font-semibold text-text-primary">Assignment review queue</h2>
-                <p className="mt-1 text-sm text-text-secondary">Grade submitted assignments and send feedback to students.</p>
+                <h2 className="font-semibold text-text-primary">{tg.reviewQueueTitle}</h2>
+                <p className="mt-1 text-sm text-text-secondary">{tg.reviewQueueSubtitle}</p>
               </div>
               <Badge tone={pendingSubmissions.length ? "amber" : "green"}>
-                {pendingSubmissions.length ? `${pendingSubmissions.length} pending` : "clear"}
+                {pendingSubmissions.length ? `${pendingSubmissions.length} ${tg.pending}` : tg.clear}
               </Badge>
             </div>
           </CardHeader>
@@ -118,7 +121,7 @@ export default async function InstructorGradebookPage({
             {assignmentSubmissions.length ? (
               assignmentSubmissions.map((submission) => {
                 const courseId = submission.lessons?.course_modules?.course_id ?? "";
-                const lessonTitle = submission.lessons?.title ?? "Assignment";
+                const lessonTitle = submission.lessons?.title ?? tg.assignment;
 
                 return (
                   <div key={submission.id} className="grid gap-4 rounded-2xl border border-border bg-background p-4">
@@ -129,7 +132,7 @@ export default async function InstructorGradebookPage({
                           <Badge tone={submission.status === "graded" ? "green" : "amber"}>{submission.status}</Badge>
                         </div>
                         <p className="mt-1 text-sm text-text-secondary">
-                          {submission.profiles?.full_name ?? "Student"} · {submission.lessons?.course_modules?.courses?.title ?? "Course"}
+                          {submission.profiles?.full_name ?? tg.student} · {submission.lessons?.course_modules?.courses?.title ?? tg.course}
                         </p>
                       </div>
                       {submission.grade_score !== null ? (
@@ -152,14 +155,14 @@ export default async function InstructorGradebookPage({
                       <input name="returnTo" type="hidden" value="gradebook" />
                       <Textarea
                         defaultValue={submission.feedback ?? ""}
-                        label="Feedback"
+                        label={tg.feedback}
                         name="feedback"
-                        placeholder="Add feedback for the student..."
+                        placeholder={tg.feedbackPlaceholder}
                       />
-                      <Input defaultValue={submission.grade_score ?? ""} label="Score" name="score" type="number" min={0} required />
-                      <Input defaultValue={submission.max_score} label="Max" name="maxScore" type="number" min={1} required />
+                      <Input defaultValue={submission.grade_score ?? ""} label={tg.score} name="score" type="number" min={0} required />
+                      <Input defaultValue={submission.max_score} label={tg.max} name="maxScore" type="number" min={1} required />
                       <Button disabled={!courseId} type="submit">
-                        Save grade
+                        {tg.saveGrade}
                       </Button>
                     </form>
                   </div>
@@ -167,8 +170,8 @@ export default async function InstructorGradebookPage({
               })
             ) : (
               <div className="rounded-2xl border border-dashed border-border bg-background p-8 text-center">
-                <p className="font-semibold text-text-primary">No assignment submissions yet</p>
-                <p className="mt-2 text-sm text-text-secondary">Student submissions will appear here when assignments are turned in.</p>
+                <p className="font-semibold text-text-primary">{tg.noSubmissionsTitle}</p>
+                <p className="mt-2 text-sm text-text-secondary">{tg.noSubmissionsDescription}</p>
               </div>
             )}
           </CardContent>
@@ -177,7 +180,7 @@ export default async function InstructorGradebookPage({
         <div className="grid content-start gap-6">
           <Card>
             <CardHeader>
-              <h2 className="font-semibold text-text-primary">Recent grades</h2>
+              <h2 className="font-semibold text-text-primary">{tg.recentGrades}</h2>
             </CardHeader>
             <CardContent className="grid gap-3">
               {gradeEntries.length ? (
@@ -185,7 +188,7 @@ export default async function InstructorGradebookPage({
                   <div key={entry.id} className="rounded-xl border border-border bg-background p-3">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <p className="font-semibold text-text-primary">{entry.profiles?.full_name ?? "Student"}</p>
+                        <p className="font-semibold text-text-primary">{entry.profiles?.full_name ?? tg.student}</p>
                         <p className="mt-1 text-sm text-text-secondary">{entry.item_name}</p>
                         <p className="text-xs text-text-secondary">{entry.courses?.title}</p>
                       </div>
@@ -197,28 +200,28 @@ export default async function InstructorGradebookPage({
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-text-secondary">No grades posted yet.</p>
+                <p className="text-sm text-text-secondary">{tg.noGradesPosted}</p>
               )}
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <h2 className="font-semibold text-text-primary">Graded assignment history</h2>
+              <h2 className="font-semibold text-text-primary">{tg.gradedHistory}</h2>
             </CardHeader>
             <CardContent className="grid gap-3">
               {gradedSubmissions.length ? (
                 gradedSubmissions.slice(0, 6).map((submission) => (
                   <div key={submission.id} className="rounded-xl border border-border bg-background p-3">
-                    <p className="font-semibold text-text-primary">{submission.lessons?.title ?? "Assignment"}</p>
-                    <p className="mt-1 text-sm text-text-secondary">{submission.profiles?.full_name ?? "Student"}</p>
+                    <p className="font-semibold text-text-primary">{submission.lessons?.title ?? tg.assignment}</p>
+                    <p className="mt-1 text-sm text-text-secondary">{submission.profiles?.full_name ?? tg.student}</p>
                     <p className="mt-2 text-sm font-semibold text-primary-hover">
                       {submission.grade_score}/{submission.max_score}
                     </p>
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-text-secondary">Graded assignments will appear here.</p>
+                <p className="text-sm text-text-secondary">{tg.gradedHistoryEmpty}</p>
               )}
             </CardContent>
           </Card>

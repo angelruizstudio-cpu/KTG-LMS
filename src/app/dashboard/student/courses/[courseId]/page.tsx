@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { requireProfile } from "@/lib/auth";
+import { getDictionary } from "@/lib/i18n";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { formatDateTime, formatDueDate, isOverdue } from "@/lib/utils";
 import type { Database } from "@/types/database";
@@ -24,6 +25,8 @@ export default async function StudentCoursePage({
   const { profile } = await requireProfile(["student", "admin"]);
   const { courseId } = await params;
   const supabase = await createSupabaseServerClient();
+  const { t } = await getDictionary();
+  const tc = t.dashboard.student.courseDetail;
 
   const [{ data: course }, { data: enrollment }, { data: modules }, { data: announcements }] = await Promise.all([
     supabase.from("courses").select("*").eq("id", courseId).single(),
@@ -36,10 +39,10 @@ export default async function StudentCoursePage({
     return (
       <Card>
         <CardContent className="grid gap-4 text-center">
-          <h1 className="text-xl font-bold text-text-primary">Enrollment required</h1>
-          <p className="text-sm text-text-secondary">An administrator must grant access before you can view lessons.</p>
+          <h1 className="text-xl font-bold text-text-primary">{tc.enrollmentRequiredTitle}</h1>
+          <p className="text-sm text-text-secondary">{tc.enrollmentRequiredDescription}</p>
           <Link className="font-semibold text-primary-hover" href="/dashboard/student/catalog">
-            View program courses
+            {tc.viewProgramCourses}
           </Link>
         </CardContent>
       </Card>
@@ -79,7 +82,9 @@ export default async function StudentCoursePage({
         <div>
           <div className="mb-3 flex items-center gap-3">
             <Badge tone={enrollment.status === "completed" ? "green" : "blue"}>{enrollment.status}</Badge>
-            <span className="text-sm font-semibold text-text-secondary">{enrollment.progress_percent}% complete</span>
+            <span className="text-sm font-semibold text-text-secondary">
+              {enrollment.progress_percent}% {tc.complete.toLowerCase()}
+            </span>
           </div>
           <h1 className="text-3xl font-bold text-text-primary">{course.title}</h1>
           <p className="mt-2 max-w-3xl text-text-secondary">{course.description}</p>
@@ -90,12 +95,12 @@ export default async function StudentCoursePage({
             href={`/dashboard/student/courses/${course.id}/discussions`}
           >
             <MessagesSquare size={18} />
-            Discussions
+            {tc.discussions}
           </Link>
           {enrollment.status === "completed" ? (
             <Link className="inline-flex items-center gap-2 font-semibold text-primary-hover" href="/dashboard/student/certificates">
               <Trophy size={18} />
-              View certificate
+              {tc.viewCertificate}
             </Link>
           ) : null}
         </div>
@@ -106,7 +111,7 @@ export default async function StudentCoursePage({
           <CardHeader>
             <h2 className="flex items-center gap-2 font-semibold text-text-primary">
               <Megaphone size={18} />
-              Announcements
+              {tc.announcements}
             </h2>
           </CardHeader>
           <CardContent className="grid gap-3">
@@ -158,7 +163,7 @@ export default async function StudentCoursePage({
                               }`}
                             >
                               <Clock size={12} />
-                              {isOverdue(lesson.due_at, completedIds.has(lesson.id)) ? "Overdue — " : "Due "}
+                              {isOverdue(lesson.due_at, completedIds.has(lesson.id)) ? tc.overdue : tc.due}
                               {formatDueDate(lesson.due_at)}
                             </p>
                           ) : null}
@@ -169,7 +174,7 @@ export default async function StudentCoursePage({
                           className="inline-flex h-9 items-center justify-center rounded-xl bg-primary px-3 text-sm font-semibold text-text-inverse shadow-glow transition hover:bg-primary-hover"
                           href={`/dashboard/student/courses/${course.id}/lessons/${lesson.id}`}
                         >
-                          Open lesson
+                          {tc.openLesson}
                         </Link>
                         <form action={markLessonCompleteAction}>
                           <input name="courseId" type="hidden" value={course.id} />
@@ -178,10 +183,10 @@ export default async function StudentCoursePage({
                             {completedIds.has(lesson.id) ? (
                               <>
                                 <CheckCircle2 size={16} />
-                                Complete
+                                {tc.complete}
                               </>
                             ) : (
-                              "Mark complete"
+                              tc.markComplete
                             )}
                           </Button>
                         </form>
@@ -189,7 +194,7 @@ export default async function StudentCoursePage({
                     </div>
                     {lesson.video_url ? (
                       <a className="mt-4 block text-sm font-semibold text-primary-hover" href={lesson.video_url} rel="noreferrer" target="_blank">
-                        Open video
+                        {tc.openVideo}
                       </a>
                     ) : null}
                     {lesson.pdf_path ? (
@@ -201,16 +206,16 @@ export default async function StudentCoursePage({
                           target="_blank"
                         >
                           <UploadCloud size={16} />
-                          Open PDF
+                          {tc.openPdf}
                         </a>
                       ) : (
-                        <p className="mt-4 text-sm text-text-secondary">PDF file is temporarily unavailable.</p>
+                        <p className="mt-4 text-sm text-text-secondary">{tc.pdfUnavailable}</p>
                       )
                     ) : null}
                     {lesson.content ? <p className="mt-4 whitespace-pre-line text-sm leading-6 text-text-secondary">{lesson.content}</p> : null}
                     {lesson.assignment_prompt ? (
                       <div className="mt-4 rounded-xl bg-background p-3 text-sm text-text-secondary">
-                        <p className="font-semibold text-text-primary">Assignment</p>
+                        <p className="font-semibold text-text-primary">{tc.assignment}</p>
                         <p className="mt-1">{lesson.assignment_prompt}</p>
                       </div>
                     ) : null}
@@ -220,33 +225,35 @@ export default async function StudentCoursePage({
                         <input name="lessonId" type="hidden" value={lesson.id} />
                         <Textarea
                           defaultValue={submissionByLesson.get(lesson.id)?.submission_text ?? ""}
-                          label={submissionByLesson.has(lesson.id) ? "Update submission" : "Submission"}
+                          label={submissionByLesson.has(lesson.id) ? tc.updateSubmission : tc.submission}
                           name="submissionText"
                           required
                         />
                         <Input
                           defaultValue={submissionByLesson.get(lesson.id)?.file_path ?? ""}
-                          label="Optional file path"
+                          label={tc.optionalFilePath}
                           name="filePath"
                           placeholder="lesson-files/submissions/my-work.pdf"
                         />
                         {submissionByLesson.has(lesson.id) ? (
                           <div className="rounded-xl border border-border bg-surface p-3 text-sm text-text-secondary">
                             <p className="font-semibold capitalize text-text-primary">
-                              Status: {submissionByLesson.get(lesson.id)?.status}
+                              {tc.status}: {submissionByLesson.get(lesson.id)?.status}
                             </p>
                             {submissionByLesson.get(lesson.id)?.grade_score !== null ? (
                               <p className="mt-1">
-                                Grade: {submissionByLesson.get(lesson.id)?.grade_score}/{submissionByLesson.get(lesson.id)?.max_score}
+                                {tc.grade}: {submissionByLesson.get(lesson.id)?.grade_score}/{submissionByLesson.get(lesson.id)?.max_score}
                               </p>
                             ) : null}
                             {submissionByLesson.get(lesson.id)?.feedback ? (
-                              <p className="mt-1">Feedback: {submissionByLesson.get(lesson.id)?.feedback}</p>
+                              <p className="mt-1">
+                                {tc.feedback}: {submissionByLesson.get(lesson.id)?.feedback}
+                              </p>
                             ) : null}
                           </div>
                         ) : null}
                         <Button className="w-fit" size="sm" type="submit">
-                          {submissionByLesson.has(lesson.id) ? "Update assignment" : "Submit assignment"}
+                          {submissionByLesson.has(lesson.id) ? tc.updateAssignment : tc.submitAssignment}
                         </Button>
                       </form>
                     ) : null}
@@ -270,7 +277,7 @@ export default async function StudentCoursePage({
                             </label>
                           ))}
                         <Button className="w-fit" size="sm" type="submit">
-                          Submit quiz
+                          {tc.submitQuiz}
                         </Button>
                       </form>
                     ) : null}
