@@ -27,12 +27,14 @@ const navByRole: Record<UserRole, Array<{ href: string; labelKey: string; iconKe
     { href: "/dashboard/instructor", labelKey: "instructorOverview", iconKey: "dashboard" },
     { href: "/dashboard/instructor/courses", labelKey: "courses", iconKey: "book" },
     { href: "/dashboard/instructor/gradebook", labelKey: "gradebook", iconKey: "trophy" },
-    { href: "/dashboard/instructor/analytics", labelKey: "analytics", iconKey: "analytics" }
+    { href: "/dashboard/instructor/analytics", labelKey: "analytics", iconKey: "analytics" },
+    { href: "/dashboard/instructor/calendar", labelKey: "calendar", iconKey: "calendar" }
   ],
   student: [
     { href: "/dashboard/student", labelKey: "myLearning", iconKey: "dashboard" },
     { href: "/dashboard/student/catalog", labelKey: "programCourses", iconKey: "book" },
-    { href: "/dashboard/student/certificates", labelKey: "certificates", iconKey: "trophy" }
+    { href: "/dashboard/student/certificates", labelKey: "certificates", iconKey: "trophy" },
+    { href: "/dashboard/student/calendar", labelKey: "calendar", iconKey: "calendar" }
   ],
   registrar: [
     { href: "/dashboard/registrar", labelKey: "registrarOverview", iconKey: "dashboard" },
