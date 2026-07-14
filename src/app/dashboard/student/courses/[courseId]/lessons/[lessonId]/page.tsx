@@ -97,6 +97,14 @@ export default async function StudentLessonPage({
     );
   }
 
+  const { data: rubricCriteriaData } = await supabase
+    .from("assignment_rubric_criteria")
+    .select("*")
+    .eq("lesson_id", lessonId)
+    .order("position");
+  const rubricCriteria = rubricCriteriaData ?? [];
+  const rubricTotalPoints = rubricCriteria.reduce((sum, criterion) => sum + criterion.max_points, 0);
+
   const completedIds = new Set((progress ?? []).filter((item) => item.completed).map((item) => item.lesson_id));
   const completed = completedIds.has(lesson.id);
   const completedCount = completedIds.size;
@@ -180,6 +188,23 @@ export default async function StudentLessonPage({
                 <div className="mt-5 rounded-2xl border border-border bg-background p-5">
                   <p className="font-bold text-text-primary">{tl.assignment}</p>
                   <p className="mt-2 whitespace-pre-line text-sm leading-6 text-text-secondary">{lesson.assignment_prompt}</p>
+                </div>
+              ) : null}
+
+              {rubricCriteria.length ? (
+                <div className="mt-5 rounded-2xl border border-border bg-background p-5">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-bold text-text-primary">Grading rubric</p>
+                    <Badge tone="slate">{rubricTotalPoints} points total</Badge>
+                  </div>
+                  <div className="mt-3 grid gap-2">
+                    {rubricCriteria.map((criterion) => (
+                      <div key={criterion.id} className="flex items-center justify-between rounded-xl bg-surface p-3 text-sm">
+                        <p className="font-semibold text-text-primary">{criterion.name}</p>
+                        <p className="text-text-secondary">{criterion.max_points} pts</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ) : null}
             </CardContent>

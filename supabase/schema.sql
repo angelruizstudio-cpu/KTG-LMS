@@ -129,6 +129,20 @@ create table public.lessons (
   created_at timestamptz not null default now()
 );
 
+-- Assignment rubric criteria (see supabase/migrations/021_assignment_rubrics.sql). Placed here since
+-- it only depends on lessons/course_modules; its RLS is added later where is_discussion_course_member()
+-- and is_instructor_for_course() already exist.
+create table public.assignment_rubric_criteria (
+  id uuid primary key default gen_random_uuid(),
+  lesson_id uuid not null references public.lessons(id) on delete cascade,
+  name text not null,
+  max_points integer not null check (max_points > 0),
+  position integer not null default 0,
+  created_at timestamptz not null default now()
+);
+
+create index assignment_rubric_criteria_lesson_id_idx on public.assignment_rubric_criteria(lesson_id);
+
 create table public.enrollments (
   id uuid primary key default gen_random_uuid(),
   course_id uuid not null references public.courses(id) on delete cascade,
@@ -2023,5 +2037,40 @@ using (
     select 1 from public.discussion_threads
     where discussion_threads.id = discussion_replies.thread_id
       and public.is_instructor_for_course(discussion_threads.course_id)
+  )
+);
+
+alter table public.assignment_rubric_criteria enable row level security;
+
+create policy "Course members view rubric criteria"
+on public.assignment_rubric_criteria for select
+using (
+  exists (
+    select 1
+    from public.lessons
+    join public.course_modules on course_modules.id = lessons.module_id
+    where lessons.id = assignment_rubric_criteria.lesson_id
+      and public.is_discussion_course_member(course_modules.course_id)
+  )
+);
+
+create policy "Course owners manage rubric criteria"
+on public.assignment_rubric_criteria for all
+using (
+  exists (
+    select 1
+    from public.lessons
+    join public.course_modules on course_modules.id = lessons.module_id
+    where lessons.id = assignment_rubric_criteria.lesson_id
+      and public.is_instructor_for_course(course_modules.course_id)
+  )
+)
+with check (
+  exists (
+    select 1
+    from public.lessons
+    join public.course_modules on course_modules.id = lessons.module_id
+    where lessons.id = assignment_rubric_criteria.lesson_id
+      and public.is_instructor_for_course(course_modules.course_id)
   )
 );

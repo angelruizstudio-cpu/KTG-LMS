@@ -2,6 +2,7 @@ import { Megaphone, FileQuestion, FileText, MessagesSquare, PlayCircle, Trash2, 
 import Link from "next/link";
 
 import {
+  addRubricCriterionAction,
   assignEnrollmentSectionAction,
   createAnnouncementAction,
   createLessonAction,
@@ -10,6 +11,7 @@ import {
   createQuizQuestionAction,
   createSectionAction,
   deleteAnnouncementAction,
+  deleteRubricCriterionAction,
   gradeAssignmentSubmissionAction,
   publishCourseAction,
   reactivateEnrollmentAction
@@ -43,6 +45,7 @@ type EnrollmentWithProfile = {
   profiles?: { full_name?: string | null; email?: string | null } | null;
 };
 type AnnouncementRow = Database["public"]["Tables"]["course_announcements"]["Row"];
+type RubricCriterionRow = Database["public"]["Tables"]["assignment_rubric_criteria"]["Row"];
 type SectionWithInstructor = Database["public"]["Tables"]["course_sections"]["Row"] & {
   profiles?: { full_name?: string | null; email?: string | null } | null;
 };
@@ -104,6 +107,17 @@ export default async function InstructorCourseDetailPage({
         .in("lesson_id", lessonIds)
         .order("submitted_at", { ascending: false })
     : { data: [] as AssignmentSubmissionWithProfile[] };
+  const { data: rubricCriteria } = lessonIds.length
+    ? await supabase.from("assignment_rubric_criteria").select("*").in("lesson_id", lessonIds).order("position")
+    : { data: [] as RubricCriterionRow[] };
+
+  const rubricByLesson = ((rubricCriteria ?? []) as RubricCriterionRow[]).reduce<Record<string, RubricCriterionRow[]>>(
+    (acc, criterion) => {
+      acc[criterion.lesson_id] = [...(acc[criterion.lesson_id] ?? []), criterion];
+      return acc;
+    },
+    {}
+  );
 
   const lessonsByModule = (lessons ?? []).reduce<Record<string, LessonRow[]>>((acc, lesson) => {
     acc[lesson.module_id] = [...(acc[lesson.module_id] ?? []), lesson];
@@ -240,6 +254,50 @@ export default async function InstructorCourseDetailPage({
                                   Add question
                                 </Button>
                               </div>
+                            </form>
+                          ) : null}
+                        </div>
+                      ) : null}
+
+                      {lesson.lesson_type === "assignment" ? (
+                        <div className="grid gap-3 rounded-2xl border border-border bg-surface p-3">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="font-semibold text-text-primary">Grading rubric</p>
+                            <Badge tone="slate">{rubricByLesson[lesson.id]?.length ?? 0} criteria</Badge>
+                          </div>
+                          {(rubricByLesson[lesson.id] ?? []).length ? (
+                            <div className="grid gap-2">
+                              {(rubricByLesson[lesson.id] ?? []).map((criterion) => (
+                                <div key={criterion.id} className="flex items-center justify-between rounded-xl bg-background p-3 text-sm">
+                                  <div>
+                                    <p className="font-semibold text-text-primary">{criterion.name}</p>
+                                    <p className="text-xs text-text-secondary">{criterion.max_points} points</p>
+                                  </div>
+                                  {isOwner ? (
+                                    <form action={deleteRubricCriterionAction}>
+                                      <input name="courseId" type="hidden" value={course.id} />
+                                      <input name="criterionId" type="hidden" value={criterion.id} />
+                                      <SubmitButton size="sm" variant="ghost">
+                                        <Trash2 size={14} />
+                                      </SubmitButton>
+                                    </form>
+                                  ) : null}
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-text-secondary">No rubric criteria yet.</p>
+                          )}
+                          {isOwner ? (
+                            <form action={addRubricCriterionAction} className="grid gap-3 md:grid-cols-[1fr_120px_auto] md:items-end">
+                              <input name="courseId" type="hidden" value={course.id} />
+                              <input name="lessonId" type="hidden" value={lesson.id} />
+                              <input name="position" type="hidden" value={(rubricByLesson[lesson.id] ?? []).length} />
+                              <Input label="Criterion name" name="name" required />
+                              <Input label="Max points" name="maxPoints" type="number" min={1} defaultValue={10} required />
+                              <Button size="sm" type="submit">
+                                Add criterion
+                              </Button>
                             </form>
                           ) : null}
                         </div>
