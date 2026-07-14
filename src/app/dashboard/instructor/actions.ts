@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import { requireProfile } from "@/lib/auth";
 import { escapeHtml, renderEmail, sendEmail } from "@/lib/email";
+import { createNotification, createNotificationsForRecipients } from "@/lib/notifications";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { slugify } from "@/lib/utils";
 
@@ -456,7 +457,7 @@ export async function deleteRubricCriterionAction(formData: FormData) {
 }
 
 export async function gradeAssignmentSubmissionAction(formData: FormData) {
-  await requireProfile(["instructor", "admin"]);
+  const { profile } = await requireProfile(["instructor", "admin"]);
   const parsed = gradeAssignmentSchema.safeParse({
     courseId: formData.get("courseId"),
     submissionId: formData.get("submissionId"),
@@ -530,6 +531,15 @@ export async function gradeAssignmentSubmissionAction(formData: FormData) {
     });
   }
 
+  await createNotification(supabase, {
+    tenantId: profile.default_tenant_id,
+    recipientId: parsed.data.studentId,
+    type: "grade",
+    title: `New grade posted: ${parsed.data.itemName}`,
+    body: `${parsed.data.score}/${parsed.data.maxScore}${course?.title ? ` in ${course.title}` : ""}`,
+    link: `/dashboard/student/courses/${parsed.data.courseId}`
+  });
+
   revalidatePath(`/dashboard/instructor/courses/${parsed.data.courseId}`);
   revalidatePath("/dashboard/instructor/gradebook");
   if (parsed.data.returnTo === "gradebook") {
@@ -560,6 +570,16 @@ export async function createAnnouncementAction(formData: FormData) {
   if (error) {
     redirect(`/dashboard/instructor/courses/${parsed.data.courseId}?error=${encodeURIComponent(error.message)}`);
   }
+
+  const { data: enrolledStudents } = await supabase.from("enrollments").select("student_id").eq("course_id", parsed.data.courseId);
+  await createNotificationsForRecipients(supabase, {
+    tenantId: profile.default_tenant_id,
+    recipientIds: (enrolledStudents ?? []).map((enrollment) => enrollment.student_id),
+    type: "announcement",
+    title: parsed.data.title,
+    body: parsed.data.body,
+    link: `/dashboard/student/courses/${parsed.data.courseId}`
+  });
 
   revalidatePath(`/dashboard/instructor/courses/${parsed.data.courseId}`);
   revalidatePath(`/dashboard/student/courses/${parsed.data.courseId}`);

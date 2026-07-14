@@ -583,6 +583,30 @@ export interface Database {
         };
         Update: Partial<Database["public"]["Tables"]["student_communications"]["Insert"]>;
       };
+      notifications: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          recipient_id: string;
+          type: string;
+          title: string;
+          body: string | null;
+          link: string | null;
+          read_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          recipient_id: string;
+          type: string;
+          title: string;
+          body?: string | null;
+          link?: string | null;
+          read_at?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["notifications"]["Insert"]>;
+      };
     };
     Views: Record<string, never>;
     Functions: {
