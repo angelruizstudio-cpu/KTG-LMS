@@ -21,6 +21,7 @@ export const dictionary = {
     common: {
       backToInstitutionLogin: "Back to institution login",
       backToPlatformLogin: "Back to platform login",
+      analytics: "Analytics",
       certificates: "Certificates",
       courses: "Courses",
       dashboard: "Dashboard",
@@ -287,6 +288,7 @@ export const dictionary = {
     common: {
       backToInstitutionLogin: "Volver al login institucional",
       backToPlatformLogin: "Volver al login de plataforma",
+      analytics: "Analíticas",
       certificates: "Certificados",
       courses: "Cursos",
       dashboard: "Panel",
@@ -553,6 +555,7 @@ export const dictionary = {
     common: {
       backToInstitutionLogin: "返回机构登录",
       backToPlatformLogin: "返回平台登录",
+      analytics: "分析",
       certificates: "证书",
       courses: "课程",
       dashboard: "仪表板",
